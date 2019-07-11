@@ -18,7 +18,7 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [10. Scale a Konvoy cluster](#10-scale-a-konvoy-cluster)
 * [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
 * [12. Konvoy monitoring](#12-konvoy-monitoring)
-* [13. Konvoy logging/debugging](#13-konvoy-logging/debugging)
+* [13. Konvoy logging/debugging](#13-konvoy-loggingdebugging)
 
 ## Prerequisites
 
