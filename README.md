@@ -229,16 +229,25 @@ Finally, run the following command to see the URL of the Load Balancer created o
 
 ```bash
 kubectl get svc redis
+
 NAME    TYPE           CLUSTER-IP   EXTERNAL-IP                                                               PORT(S)          AGE
 redis   LoadBalancer   10.0.51.32   a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com   6379:31423/TCP   43s
 ```
 
-You need to wait for a few minutes while the Load Balancer is created on AWS.
+You need to wait for a few minutes while the Load Balancer is created on AWS and the name resolution in place.
+
+```bash
+until nslookup $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+do
+  sleep 1
+done
+```
 
 You can validate that you can access the redis Pod from your laptop using telnet:
 
 ```bash
 telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+
 Trying 52.27.218.48...
 Connected to a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com.
 Escape character is '^]'.
@@ -296,6 +305,7 @@ Finally, run the following command to see the URL of the Load Balancer created o
 
 ```bash
 kubectl get svc traefik-kubeaddons -n kubeaddons
+
 NAME                 TYPE           CLUSTER-IP    EXTERNAL-IP                                                             PORT(S)                                     AGE
 traefik-kubeaddons   LoadBalancer   10.0.24.215   abf2e5bda6ca811e982140acb7ee21b7-37522315.us-west-2.elb.amazonaws.com   80:31169/TCP,443:32297/TCP,8080:31923/TCP   4h22m
 ```
@@ -339,7 +349,7 @@ spec:
 EOF
 ```
 
-Check that the Redis and the http-echo apps aren't accessible anymore
+Wait for a minute to allow the network policy to be activated and check that the Redis and the http-echo apps aren't accessible anymore
 
 ```bash
 telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
@@ -454,10 +464,39 @@ aws --region="$REGION" ec2 describe-instances |  jq --raw-output ".Reservations[
 done
 ```
 
-To be able to use Portworx persistent storage on your Kubernetes cluster, you need to deploy it in your Kubernetes cluster using the following command:
+To be able to use Portworx persistent storage on your Kubernetes cluster, you need to download the Portworx specs using the following command:
 
 ```bash
-kubectl apply -f "https://install.portworx.com/?mc=false&kbver=1.14.3&b=true&stork=true&lh=true&st=k8s&c=cluster1"
+wget -O portworx.yaml "https://install.portworx.com/?mc=false&kbver=1.14.3&b=true&stork=true&lh=true&st=k8s&c=cluster1"
+```
+
+Then, you need to edit the `portworx.yaml` file to modify the type of the Kubernetes Service from `NodePort` to `LoadBalancer`:
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: px-lighthouse
+  namespace: kube-system
+  labels:
+    tier: px-web-console
+spec:
+  type: LoadBalancer
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+    - name: https
+      port: 443
+      targetPort: https
+  selector:
+    tier: px-web-console
+```
+
+Now, you can deploy Portworx using the command below:
+
+```bash
+kubectl apply -f portworx.yaml
 ```
 
 Run the following command until all the pods are running:
@@ -465,6 +504,20 @@ Run the following command until all the pods are running:
 ```bash
 kubectl -n kube-system get pods
 ```
+
+You need to wait for a few minutes while the Load Balancer is created on AWS and the name resolution in place.
+
+```bash
+until nslookup $(kubectl -n kube-system get svc px-lighthouse --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+do
+  sleep 1
+done
+echo "Open http://$(kubectl -n kube-system get svc px-lighthouse --output jsonpath={.status.loadBalancer.ingress[*].hostname}) to access the Portworx UI"
+```
+
+Access the Portworx UI using the URL indicated and login with the user `admin` and the password `Password1`.
+
+![Portworx UI](images/portworx.png)
 
 Create the Kubernetes StorageClass using the following command:
 
@@ -482,12 +535,6 @@ EOF
 
 It will create volumes on Portworx with 2 replicas.
 
-Run the following command to define this StorageClass as the default Storage Class in your Kubernetes cluster:
-
-```bash
-kubectl patch storageclass portworx-sc -p "{\"metadata\": {\"annotations\":{\"storageclass.kubernetes.io/is-default-class\":\"true\"}}}"
-```
-
 Create the Kubernetes PersistentVolumeClaim using the following command:
 
 ```bash
@@ -501,6 +548,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: portworx-sc
   resources:
     requests:
       storage: 1Gi
@@ -510,7 +558,7 @@ EOF
 Check the status of the PersistentVolumeClaim using the following command:
 
 ```bash
-$ kubectl describe pvc pvc001
+kubectl describe pvc pvc001
 Name:          pvc001
 Namespace:     default
 StorageClass:  portworx-sc
@@ -684,6 +732,12 @@ kubectl delete pod $pod
 
 The Deployment will recreate the pod automatically.
 
+Run the following command until the pod is running:
+
+```bash
+kubectl get pods
+```
+
 Check the content of the file `/data/out.txt` and verify that the first timestamp is the same as the one noted previously:
 
 ```bash
@@ -709,13 +763,48 @@ Download the latest release of Istio using the following command:
 curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.2.2 sh -
 ```
 
-Run the following commands to go to the Istio directory and to install Istio using Helm:
+Run the following commands to go to the Istio directory and to create the Istio CRDs using Helm:
 
 ```bash
 cd istio*
 export PATH=$PWD/bin:$PATH
 helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
+```
+
+Wait until the 23 CRDs have been created:
+
+```bash
+until kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l | grep 23
+do
+  sleep 1
+done
+
+23
+```
+
+Run the following commands to install Istio using Helm:
+
+```bash
 helm install install/kubernetes/helm/istio --name istio --namespace istio-system
+```
+
+Wait until all the Istio pods are running:
+
+```bash
+kubectl -n istio-system get pods
+
+NAME                                      READY   STATUS      RESTARTS   AGE
+istio-citadel-68c85b6684-ghp95            1/1     Running     0          3m42s
+istio-galley-77d697957f-wfhnx             1/1     Running     0          3m42s
+istio-ingressgateway-8b858ff84-mmcm2      1/1     Running     0          3m42s
+istio-init-crd-10-l9vkw                   0/1     Completed   0          3m57s
+istio-init-crd-11-tk9hf                   0/1     Completed   0          3m57s
+istio-init-crd-12-9jrdz                   0/1     Completed   0          3m57s
+istio-pilot-5544b58bb6-257nb              2/2     Running     0          3m42s
+istio-policy-5f9cf6df57-pgxq7             2/2     Running     3          3m42s
+istio-sidecar-injector-66549495d8-gq2kb   1/1     Running     0          3m42s
+istio-telemetry-7749c6d54f-g4q25          2/2     Running     2          3m42s
+prometheus-776fdf7479-lrwvq               1/1     Running     0          3m42s
 ```
 
 ## 8. Deploy an application on Istio
@@ -735,13 +824,22 @@ Finally, run the following command to get the URL of the Load Balancer created o
 
 ```bash
 kubectl get svc istio-ingressgateway -n istio-system
+
 NAME                   TYPE           CLUSTER-IP    EXTERNAL-IP                                                               PORT(S)                                                                                                                                      AGE
 istio-ingressgateway   LoadBalancer   10.0.29.241   a682d13086ccf11e982140acb7ee21b7-2083182676.us-west-2.elb.amazonaws.com   15020:30380/TCP,80:31380/TCP,443:31390/TCP,31400:31400/TCP,15029:30756/TCP,15030:31420/TCP,15031:31948/TCP,15032:32061/TCP,15443:31232/TCP   110s
 ```
 
-Go to the corresponding URL to access the application, eg:
+You need to wait for a few minutes while the Load Balancer is created on AWS and the name resolution in place.
 
-[http://a682d13086ccf11e982140acb7ee21b7-2083182676.us-west-2.elb.amazonaws.com/productpage](http://a682d13086ccf11e982140acb7ee21b7-2083182676.us-west-2.elb.amazonaws.com/productpage)
+```bash
+until nslookup $(kubectl get svc istio-ingressgateway -n istio-system --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+do
+  sleep 1
+done
+echo "Open http://$(kubectl get svc istio-ingressgateway -n istio-system --output jsonpath={.status.loadBalancer.ingress[*].hostname})/productpage to access the BookInfo Sample app"
+```
+
+Go to the corresponding URL to access the BookInfo Sample app.
 
 ![Istio](images/istio.png)
 
@@ -752,6 +850,12 @@ You can then follow the other steps described in the Istio documentation to unde
 ## 9. Deploy Kafka using KUDO
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
+
+Go back to the konvoy directory:
+
+```bash
+cd ..
+```
 
 Run the following commands to deploy KUDO on your Kubernetes cluster:
 
@@ -787,7 +891,8 @@ chmod +x /usr/bin/kubectl-kudo
 Deploy ZooKeeper using KUDO:
 
 ```bash
-kubectl-kudo install zookeeper --instance=zk
+kubectl kudo install zookeeper --instance=zk
+
 operator.kudo.k8s.io/v1alpha1/zookeeper created
 operatorversion.kudo.k8s.io/v1alpha1/zookeeper-0.1.0 created
 No instance named 'zk' tied to this 'zookeeper' version has been found. Do you want to create one? (Yes/no) yes
@@ -796,9 +901,9 @@ instance.kudo.k8s.io/v1alpha1/zk created
 
 Check the status of the deployment:
 
-
 ```bash
-kubectl-kudo plan status --instance=zk
+kubectl kudo plan status --instance=zk
+
 Plan(s) for "zk" in namespace "default":
 .
 └── zk (Operator-Version: "zookeeper-0.1.0" Active-Plan: "zk-deploy-694218097")
@@ -811,23 +916,106 @@ Plan(s) for "zk" in namespace "default":
                 └── connection [NOT ACTIVE]
 ```
 
+And check that the corresponding Pods are running:
+
+```bash
+kubectl get pods | grep zk
+
+zk-zk-0                            1/1     Running   0          2m48s
+zk-zk-1                            1/1     Running   0          2m48s
+zk-zk-2                            1/1     Running   0          2m48s
+```
+
 Deploy Kafka using KUDO:
 
 ```bash
-kubectl-kudo install kafka --instance=kafka
+kubectl kudo install kafka --instance=kafka
 ```
 
 Check the status of the deployment:
 
-
 ```bash
-kubectl-kudo plan status --instance=kafka
+kubectl kudo plan status --instance=kafka
+
 Plan(s) for "kafka" in namespace "default":
 .
 └── kafka (Operator-Version: "kafka-0.1.1" Active-Plan: "kafka-deploy-260200627")
     └── Plan deploy (serial strategy) [COMPLETE]
         └── Phase deploy-kafka (serial strategy) [COMPLETE]
             └── Step deploy (COMPLETE)
+```
+
+And check that the corresponding Pods are running:
+
+```bash
+kubectl get pods | grep kafka
+
+zk-zk-0                            1/1     Running   0          2m48s
+zk-zk-1                            1/1     Running   0          2m48s
+zk-zk-2                            1/1     Running   0          2m48s
+```
+
+Produce messages in Kafka:
+
+```bash
+cat <<EOF | kubectl create -f -
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: kudo-kafka-generator
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: kudo-kafka-generator
+      labels:
+        app: kudo-kafka-generator
+    spec:
+      containers:
+      - name: kudo-kafka-generator
+        image: mesosphere/flink-generator:0.1
+        command: ["/generator-linux"]
+        imagePullPolicy: Always
+        args: ["--broker", "kafka-kafka-0.kafka-svc:9092"]
+EOF
+```
+
+Consume messages from Kafka:
+
+```bash
+cat <<EOF | kubectl create -f -
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+ name: kudo-kafka-consumer
+spec:
+ replicas: 1
+ template:
+   metadata:
+     name: kudo-kafka-consumer
+     labels:
+       app: kudo-kafka-consumer
+   spec:
+     containers:
+     - name: kudo-kafka-consumer
+       image: tbaums/kudo-kafka-demo
+       imagePullPolicy: Always
+       env:
+        - name: BROKER_SERVICE
+          value: kafka-kafka-0.kafka-svc:9092
+EOF
+```
+
+Check the logs:
+
+```bash
+kubectl logs $(kubectl get pods -l app=kudo-kafka-consumer -o jsonpath='{.items[0].metadata.name}') --follow
+
+Message: b'2019-07-11T16:28:45Z;0;6;4283'
+Message: b'2019-07-11T16:28:46Z;1;8;4076'
+Message: b'2019-07-11T16:28:47Z;5;2;9140'
+Message: b'2019-07-11T16:28:48Z;5;8;8603'
+Message: b'2019-07-11T16:28:49Z;1;0;5097'
 ```
 
 ## 10. Scale a Konvoy cluster
@@ -849,6 +1037,7 @@ Check that there are now 5 kubelets deployed:
 
 ```
 kubectl get nodes
+
 NAME                                         STATUS   ROLES    AGE     VERSION
 ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.3
 ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.3
@@ -878,6 +1067,7 @@ spec:
 
 ```bash
 ./konvoy upgrade kubernetes
+
 This process will take about 20 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
 
 STAGE [Determining Upgrade Safety]
