@@ -457,7 +457,7 @@ done
 To be able to use Portworx persistent storage on your Kubernetes cluster, you need to deploy it in your Kubernetes cluster using the following command:
 
 ```bash
-kubectl apply -f "https://install.portworx.com/?mc=false&kbver=1.14.3&b=true&stork=true&lh=true&st=k8s"
+kubectl apply -f "https://install.portworx.com/?mc=false&kbver=1.14.3&b=true&stork=true&lh=true&st=k8s&c=cluster1"
 ```
 
 Run the following command until all the pods are running:
