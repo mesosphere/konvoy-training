@@ -1281,12 +1281,12 @@ In this section, we will leverage Konvoy logging to troubleshoot Ingress failure
 
 We will deploy a nginx application and expose it via L7 loadbalancer. The application can be accessed with URLs follows below patten. 
 
-`http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})/applications/nginx/`
+`http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/`
 
 * first, let's deploy a nginx application and scale it to 3
 
 ```bash
-kubectl run --image=nginx --replicas=3 --port=8080 --restart=Always nginx
+kubectl run --image=nginx --replicas=3 --port=80 --restart=Always nginx
 ```
 * 2nd, expose a in cluster service
 
@@ -1296,6 +1296,7 @@ kubectl expose deploy nginx --port 8080 --target-port 80 --type NodePort --name 
 * 3rd, create a ingress to expose service via Layer7 LB
   
 ```bash
+cat << EOF | kubectl apply -f - 
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -1309,16 +1310,21 @@ spec:
           serviceName: svc-nginx
           servicePort: 8080
         path:  /applications/nginx/
+EOF
 ```
-* 4th, Now check Ingress configure in Trafik
+* 4th, Now check Ingress configure in Traefik
 
-![Trafik nginx](images/trafik_nginx.png)
+![Traefik nginx](images/trafik_nginx.png)
 
-You will notice `404 Not Found` error if you try to access nginx with URL like:
+The `Traefik dashboard` indicates the nginx application is ready to receive traffic but if you try access nginx with URL listed below, you will notice `404 Not Found` error like:
 
-`http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})/applications/nginx/`
+```bash
 
-![Trafik nginx](images/trafik_404.png)
+curl -k https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/
+
+```
+
+![Traefik nginx](images/trafik_404.png)
 
 Let's troubleshooting this failure with Konvoy Kibana.
 
@@ -1328,9 +1334,14 @@ With Konvoy Kibana near real time log collection and indexing, we can easily ide
 
 So the obviously possible root-cause is PATH `/applications/nginx/` not mapped to any nginx internal handler. 
 
-One way to fix it is adding a Trafik annotation through Ingress configration as follows.
+In general, when nginx is launched with default configuration, it listens on `ROOT` path `(/)`. To fix this failure, we need to strip PATH `/applications/nginx/` to `ROOT (/)` path before traefik re-route traffic to nginx.
+
+According to `Traefik` documentation ![PathPrefixStrip](https://docs.traefik.io/configuration/backends/kubernetes/), the annotation `(traefik.ingress.kubernetes.io/rule-type)` is exactly what we need to direct traefik to strip ingress HOST PATH to ROOT PATH forementioned. 
+
+To update `Ingress`, we can use below command. 
 
 ```bash
+cat << EOF | kubectl apply -f - 
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -1346,5 +1357,6 @@ spec:
           serviceName: svc-nginx
           servicePort: 8080
         path:  /applications/nginx/
+EOF
 ```
 ![dashboard nginx](images/trafik_nginx_200.png)
