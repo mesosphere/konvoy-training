@@ -1336,7 +1336,7 @@ So the obviously possible root-cause is PATH `/applications/nginx/` not mapped t
 
 In general, when nginx is launched with default configuration, it listens on `ROOT` path `(/)`. To fix this failure, we need to strip PATH `/applications/nginx/` to `ROOT (/)` path before traefik re-route traffic to nginx.
 
-According to `Traefik` documentation ![PathPrefixStrip](https://docs.traefik.io/configuration/backends/kubernetes/), the annotation `(traefik.ingress.kubernetes.io/rule-type)` is exactly what we need to direct traefik to strip ingress HOST PATH to ROOT PATH forementioned. 
+According to `Traefik` documentation [PathPrefixStrip](https://docs.traefik.io/configuration/backends/kubernetes/), the annotation `(traefik.ingress.kubernetes.io/rule-type)` is exactly what we need to direct traefik to strip ingress HOST PATH to ROOT PATH forementioned. 
 
 To update `Ingress`, we can use below command. 
 
