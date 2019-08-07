@@ -10,15 +10,14 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)](#2-expose-a-kubernetes-application-using-a-service-type-load-balancer-l4)
 * [3. Expose a Kubernetes Application using an Ingress (L7)](#3-expose-a-kubernetes-application-using-an-ingress-l7)
 * [4. Leverage Network Policies to restrict access](#4-leverage-network-policies-to-restrict-access)
-* [5. Leverage persistent storage using Portworx](#5-leverage-persistent-storage-using-portworx)
-* [6. Leverage persistent storage using CSI](#6-leverage-persistent-storage-using-csi)
-* [7. Deploy Istio using Helm](#7-deploy-istio-using-helm)
-* [8. Deploy an application on Istio](#8-deploy-an-application-on-istio)
-* [9. Deploy Kafka using KUDO](#9-deploy-kafka-using-kudo)
-* [10. Scale a Konvoy cluster](#10-scale-a-konvoy-cluster)
-* [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
-* [12. Konvoy monitoring](#12-konvoy-monitoring)
-* [13. Konvoy logging/debugging](#13-konvoy-loggingdebugging)
+* [5. Leverage persistent storage using CSI](#6-leverage-persistent-storage-using-csi)
+* [6. Deploy Jenkins using Helm](#7-deploy-jenkins-using-helm)
+* [7. Deploy Kafka using KUDO](#9-deploy-kafka-using-kudo)
+* [8. Scale a Konvoy cluster](#10-scale-a-konvoy-cluster)
+* [9. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
+* [10. Konvoy monitoring](#12-konvoy-monitoring)
+* [11. Konvoy logging/debugging](#13-konvoy-loggingdebugging)
+* [12. Setting up an external identity provider](#14-setting-up-an-external-identity-provider)
 
 ## Prerequisites
 
@@ -78,6 +77,31 @@ cd konvoy_*/
 ### Why is this Important?
 There are many ways to deploy a kubernetes cluster from a fully manual procedure to using a fully automated or opinionated SaaS. Cluster sizes can also widely vary from a single node deployment on your laptop, to thousands of nodes in a single logical cluster, or even across multiple clusters. Thus, picking a deployment model that suits the scale that you need as your business grows is important.
 
+
+Execute the following command to create a `cluster.yaml` template file:
+
+```bash
+./konvoy init
+```
+
+Edit the `cluster.yaml` file to add the `expiration` tag and update the number of workers as below:
+
+```
+spec:
+  provider: aws
+  aws:
+    region: us-west-2
+    availabilityZones:
+    - us-west-2c
+    tags:
+      owner: djannot
+      expiration: 12h
+      nodePools:
+      - name: worker
+        count: 5
+```
+
+A tag is useful to track the AWS instances related to your Konvoy cluster (for example).
 
 Deploy your cluster using the command below:
 
@@ -160,18 +184,18 @@ To configure kubectl to manage your cluster, you simply need to run the followin
 ./konvoy apply kubeconfig
 ```
 
-You can check that the Kubernetes cluster has been deployed using the version `1.14.3` with 3 control nodes and 3 workers nodes
+You can check that the Kubernetes cluster has been deployed using the version `1.14.4` with 3 control nodes and 3 workers nodes
 
 ```bash
 kubectl get nodes
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   12m   v1.14.3
-ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   12m   v1.14.3
-ip-10-0-130-230.us-west-2.compute.internal   Ready    <none>   12m   v1.14.3
-ip-10-0-130-44.us-west-2.compute.internal    Ready    <none>   12m   v1.14.3
-ip-10-0-192-227.us-west-2.compute.internal   Ready    master   14m   v1.14.3
-ip-10-0-194-159.us-west-2.compute.internal   Ready    master   15m   v1.14.3
-ip-10-0-195-109.us-west-2.compute.internal   Ready    master   13m   v1.14.3
+ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   12m   v1.14.4
+ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   12m   v1.14.4
+ip-10-0-130-230.us-west-2.compute.internal   Ready    <none>   12m   v1.14.4
+ip-10-0-130-44.us-west-2.compute.internal    Ready    <none>   12m   v1.14.4
+ip-10-0-192-227.us-west-2.compute.internal   Ready    master   14m   v1.14.4
+ip-10-0-194-159.us-west-2.compute.internal   Ready    master   15m   v1.14.4
+ip-10-0-195-109.us-west-2.compute.internal   Ready    master   13m   v1.14.4
 ```
 
 ## 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
@@ -429,224 +453,7 @@ spec:
 EOF
 ```
 
-## 5. Leverage persistent storage using Portworx
-
-Portworx is a Software Defined Software that can use the local storage of the DC/OS nodes to provide High Available persistent storage to both Kubernetes pods and DC/OS services.
-
-### Objectives
-- Deploy Portworx on your Kubernetes cluster to leverage persistent storage using a kubernetes StorageClass
-- Create a PersistentVolumeClaim (pvc) to use volumes created in Portworx
-- Create a Pod service that will consume this pvc, write data to the persistent volume, and delete the Pod
-- Create a second Pod service that will consume the same pvc and validate that data persisted
-
-### Why is this Important?
-In recent years, containerization has become a popular way to bundle applications in a way that can be created and destroyed as often as needed. However, initially the containerization space did not support persistent storage, meaning that the data created within a container would disappear when the app finished its work and the container was destroyed. For many use-cases this is undesirable, and the industry has met the need by providing methods of retaining data created by storing them in persistent volumes. This allows for stateful applications such as databases to remain available even if a container goes down.
-
-Mesosphere provides multiple ways to achieving persistent storage for containerized applications. Portworx has been a partner of Mesosphere for many years and is a leading solution for container-based storage on the market. The Portworx solution is well integrated with Konvoy and the Kubernetes community.
-
-Set the following environment variables:
-
-```bash
-export CLUSTER=$(grep -m 1 tags.kubernetes.io/cluster state/terraform.tfstate | awk '{ print $2 }' | cut -d\" -f2)
-export REGION=us-west-2
-```
-
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
-
-Execute the following commands to create and attach an EBS volume to each Kubelet.
-
-```bash
-aws --region="$REGION" ec2 describe-instances |  jq --raw-output ".Reservations[].Instances[] | select((.Tags | length) > 0) | select(.Tags[].Value | test(\"$CLUSTER-worker\")) | select(.State.Name | test(\"running\")) | [.InstanceId, .Placement.AvailabilityZone] | \"\(.[0]) \(.[1])\"" | while read -r instance zone; do
-  echo "$instance" "$zone"
-  volume=$(aws --region="$REGION" ec2 create-volume --size=100  --availability-zone="$zone" --tag-specifications="ResourceType=volume,Tags=[{Key=string,Value=$CLUSTER}]" | jq --raw-output .VolumeId)
-  sleep 10
-  aws --region=$REGION ec2 attach-volume --device=/dev/xvdc --instance-id="$instance" --volume-id="$volume"
-done
-```
-
-To be able to use Portworx persistent storage on your Kubernetes cluster, you need to download the Portworx specs using the following command:
-
-```bash
-wget -O portworx.yaml "https://install.portworx.com/?mc=false&kbver=1.14.3&b=true&stork=true&lh=true&st=k8s&c=cluster1"
-```
-
-Then, you need to edit the `portworx.yaml` file to modify the type of the Kubernetes Service from `NodePort` to `LoadBalancer`:
-
-```
-apiVersion: v1
-kind: Service
-metadata:
-  name: px-lighthouse
-  namespace: kube-system
-  labels:
-    tier: px-web-console
-spec:
-  type: LoadBalancer
-  ports:
-    - name: http
-      port: 80
-      targetPort: 80
-    - name: https
-      port: 443
-      targetPort: https
-  selector:
-    tier: px-web-console
-```
-
-Now, you can deploy Portworx using the command below:
-
-```bash
-kubectl apply -f portworx.yaml
-```
-
-Run the following command until all the pods are running:
-
-```bash
-kubectl -n kube-system get pods
-```
-
-You need to wait for a few minutes while the Load Balancer is created on AWS and the name resolution in place.
-
-```bash
-until nslookup $(kubectl -n kube-system get svc px-lighthouse --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-do
-  sleep 1
-done
-echo "Open http://$(kubectl -n kube-system get svc px-lighthouse --output jsonpath={.status.loadBalancer.ingress[*].hostname}) to access the Portworx UI"
-```
-
-Access the Portworx UI using the URL indicated and login with the user `admin` and the password `Password1`.
-
-![Portworx UI](images/portworx.png)
-
-Create the Kubernetes StorageClass using the following command:
-
-```bash
-cat <<EOF | kubectl create -f -
-kind: StorageClass
-apiVersion: storage.k8s.io/v1beta1
-metadata:
-   name: portworx-sc
-provisioner: kubernetes.io/portworx-volume
-parameters:
-  repl: "2"
-EOF
-```
-
-It will create volumes on Portworx with 2 replicas.
-
-Create the Kubernetes PersistentVolumeClaim using the following command:
-
-```bash
-cat <<EOF | kubectl create -f -
-kind: PersistentVolumeClaim
-apiVersion: v1
-metadata:
-  name: pvc001
-  annotations:
-    volume.beta.kubernetes.io/storage-class: portworx-sc
-spec:
-  accessModes:
-    - ReadWriteOnce
-  storageClassName: portworx-sc
-  resources:
-    requests:
-      storage: 1Gi
-EOF
-```
-
-Check the status of the PersistentVolumeClaim using the following command:
-
-```bash
-kubectl describe pvc pvc001
-Name:          pvc001
-Namespace:     default
-StorageClass:  portworx-sc
-Status:        Bound
-Volume:        pvc-a38e5d2c-7df9-11e9-b547-0ac418899022
-Labels:        <none>
-Annotations:   pv.kubernetes.io/bind-completed: yes
-               pv.kubernetes.io/bound-by-controller: yes
-               volume.beta.kubernetes.io/storage-class: portworx-sc
-               volume.beta.kubernetes.io/storage-provisioner: kubernetes.io/portworx-volume
-Finalizers:    [kubernetes.io/pvc-protection]
-Capacity:      1Gi
-Access Modes:  RWO
-VolumeMode:    Filesystem
-Events:
-  Type       Reason                 Age   From                         Message
-  ----       ------                 ----  ----                         -------
-  Normal     ProvisioningSucceeded  12s   persistentvolume-controller  Successfully provisioned volume pvc-a38e5d2c-7df9-11e9-b547-0ac418899022 using kubernetes.io/portworx-volume
-Mounted By:  <none>
-```
-
-Create a Kubernetes Pod that will use this PersistentVolumeClaim using the following command:
-
-```bash
-cat <<EOF | kubectl create -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: pvpod
-spec:
-  containers:
-  - name: test-container
-    image: alpine:latest
-    command: [ "/bin/sh" ]
-    args: [ "-c", "while true; do sleep 60;done" ]
-    volumeMounts:
-    - name: test-volume
-      mountPath: /test-portworx-volume
-  volumes:
-  - name: test-volume
-    persistentVolumeClaim:
-      claimName: pvc001
-EOF
-```
-
-Create a file in the Volume using the following commands:
-
-```bash
-kubectl exec -i pvpod -- /bin/sh -c "echo test > /test-portworx-volume/test"
-```
-
-Delete the Pod using the following command:
-
-```bash
-kubectl delete pod pvpod
-```
-
-Create a Kubernetes Pod that will use the same PersistentVolumeClaim using the following command:
-
-```bash
-cat <<EOF | kubectl create -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: pvpod
-spec:
-  containers:
-  - name: test-container
-    image: alpine:latest
-    command: [ "/bin/sh" ]
-    args: [ "-c", "while true; do sleep 60;done" ]
-    volumeMounts:
-    - name: test-volume
-      mountPath: /test-portworx-volume
-  volumes:
-  - name: test-volume
-    persistentVolumeClaim:
-      claimName: pvc001
-EOF
-```
-
-Validate that the file created in the previous Pod is still available:
-
-```bash
-kubectl exec -i pvpod cat /test-portworx-volume/test
-```
-
-## 6. Leverage persistent storage using CSI
+## 5. Leverage persistent storage using CSI
 
 ### Objectives
 - Create a PersistentVolumeClaim (pvc) to use the AWS EBS CSI driver
@@ -669,7 +476,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: ebs-csi-driver
+  storageClassName: awsebscsiprovisioner
   resources:
     requests:
       storage: 1Gi
@@ -745,109 +552,88 @@ pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
 kubectl exec -i $pod cat /data/out.txt
 ```
 
-## 7. Deploy Istio using Helm
+## 6. Deploy Jenkins using Helm
 
-Cloud platforms provide a wealth of benefits for the organizations that use them.
-There’s no denying, however, that adopting the cloud can put strains on DevOps teams.
-Developers must use microservices to architect for portability, meanwhile operators are managing extremely large hybrid and multi-cloud deployments.
-Istio lets you connect, secure, control, and observe services.
+Helm is a tool for managing Kubernetes charts. Charts are packages of pre-configured Kubernetes resources.
 
-At a high level, Istio helps reduce the complexity of these deployments, and eases the strain on your development teams.
-It is a completely open source service mesh that layers transparently onto existing distributed applications.
-It is also a platform, including APIs that let it integrate into any logging platform, or telemetry or policy system.
-Istio’s diverse feature set lets you successfully, and efficiently, run a distributed microservice architecture, and provides a uniform way to secure, connect, and monitor microservices.
+You can find many charts on the [Helm Hub](https://hub.helm.sh/).
 
-Download the latest release of Istio using the following command:
+In this lab, we'll deploy the [Jenkins Helm chart](https://hub.helm.sh/charts/stable/jenkins).
+
+To deploy the chart, you need to run the following command:
 
 ```bash
-curl -L https://git.io/getLatestIstio | ISTIO_VERSION=1.2.2 sh -
-```
+helm install stable/jenkins --name jenkins --version 1.5.0 --set master.adminPassword=password
 
-Run the following commands to go to the Istio directory and to create the Istio CRDs using Helm:
+NAME:   jenkins
+LAST DEPLOYED: Wed Aug  7 17:21:32 2019
+NAMESPACE: default
+STATUS: DEPLOYED
 
-```bash
-cd istio*
-export PATH=$PWD/bin:$PATH
-helm install install/kubernetes/helm/istio-init --name istio-init --namespace istio-system
-```
+RESOURCES:
+==> v1/ConfigMap
+NAME           DATA  AGE
+jenkins        5     1s
+jenkins-tests  1     1s
 
-Wait until the 23 CRDs have been created:
+==> v1/Deployment
+NAME     READY  UP-TO-DATE  AVAILABLE  AGE
+jenkins  0/1    1           0          1s
 
-```bash
-until kubectl get crds | grep 'istio.io\|certmanager.k8s.io' | wc -l | grep 23
-do
-  sleep 1
-done
+==> v1/PersistentVolumeClaim
+NAME     STATUS   VOLUME                CAPACITY  ACCESS MODES  STORAGECLASS  AGE
+jenkins  Pending  awsebscsiprovisioner  1s
 
-23
-```
+==> v1/Pod(related)
+NAME                     READY  STATUS   RESTARTS  AGE
+jenkins-c79f457cb-ccttb  0/1    Pending  0         1s
 
-Run the following commands to install Istio using Helm:
+==> v1/Role
+NAME                     AGE
+jenkins-schedule-agents  1s
 
-```bash
-helm install install/kubernetes/helm/istio --name istio --namespace istio-system
-```
+==> v1/RoleBinding
+NAME                     AGE
+jenkins-schedule-agents  1s
 
-Wait until all the Istio pods are running:
+==> v1/Secret
+NAME     TYPE    DATA  AGE
+jenkins  Opaque  2     1s
 
-```bash
-kubectl -n istio-system get pods
+==> v1/Service
+NAME           TYPE          CLUSTER-IP  EXTERNAL-IP  PORT(S)         AGE
+jenkins        LoadBalancer  10.0.9.26   <pending>    8080:30323/TCP  1s
+jenkins-agent  ClusterIP     10.0.41.64  <none>       50000/TCP       1s
 
-NAME                                      READY   STATUS      RESTARTS   AGE
-istio-citadel-68c85b6684-ghp95            1/1     Running     0          3m42s
-istio-galley-77d697957f-wfhnx             1/1     Running     0          3m42s
-istio-ingressgateway-8b858ff84-mmcm2      1/1     Running     0          3m42s
-istio-init-crd-10-l9vkw                   0/1     Completed   0          3m57s
-istio-init-crd-11-tk9hf                   0/1     Completed   0          3m57s
-istio-init-crd-12-9jrdz                   0/1     Completed   0          3m57s
-istio-pilot-5544b58bb6-257nb              2/2     Running     0          3m42s
-istio-policy-5f9cf6df57-pgxq7             2/2     Running     3          3m42s
-istio-sidecar-injector-66549495d8-gq2kb   1/1     Running     0          3m42s
-istio-telemetry-7749c6d54f-g4q25          2/2     Running     2          3m42s
-prometheus-776fdf7479-lrwvq               1/1     Running     0          3m42s
-```
-
-## 8. Deploy an application on Istio
-
-This example deploys a sample application composed of four separate microservices used to demonstrate various Istio features.
-The application displays information about a book, similar to a single catalog entry of an online book store.
-Displayed on the page is a description of the book, book details (ISBN, number of pages, and so on), and a few book reviews.
-
-Run the following commands to deploy the bookinfo application:
-
-```bash
-kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/platform/kube/bookinfo.yaml)
-kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+==> v1/ServiceAccount
+NAME     SECRETS  AGE
+jenkins  1        1s
 ```
 
 Finally, run the following command to get the URL of the Load Balancer created on AWS for this service:
 
 ```bash
-kubectl get svc istio-ingressgateway -n istio-system
+kubectl get svc jenkins
 
-NAME                   TYPE           CLUSTER-IP    EXTERNAL-IP                                                               PORT(S)                                                                                                                                      AGE
-istio-ingressgateway   LoadBalancer   10.0.29.241   a682d13086ccf11e982140acb7ee21b7-2083182676.us-west-2.elb.amazonaws.com   15020:30380/TCP,80:31380/TCP,443:31390/TCP,31400:31400/TCP,15029:30756/TCP,15030:31420/TCP,15031:31948/TCP,15032:32061/TCP,15443:31232/TCP   110s
+NAME      TYPE           CLUSTER-IP   EXTERNAL-IP                                                              PORT(S)          AGE
+jenkins   LoadBalancer   10.0.9.26    a71b8025991124a90b2babf7ba2a75da-492974167.us-west-2.elb.amazonaws.com   8080:30323/TCP   16m
 ```
 
 You need to wait for a few minutes while the Load Balancer is created on AWS and the name resolution in place.
 
 ```bash
-until nslookup $(kubectl get svc istio-ingressgateway -n istio-system --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+until nslookup $(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 do
   sleep 1
 done
-echo "Open http://$(kubectl get svc istio-ingressgateway -n istio-system --output jsonpath={.status.loadBalancer.ingress[*].hostname})/productpage to access the BookInfo Sample app"
+echo "Open http://$(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname}):8080 to access the Jenkins UI"
 ```
 
-Go to the corresponding URL to access the BookInfo Sample app.
+Go to the corresponding URL to access the Gitlab.
 
-![Istio](images/istio.png)
+Login with the user `admin` and the password `password`.
 
-You can then follow the other steps described in the Istio documentation to understand the different Istio features:
-
-[https://istio.io/docs/examples/bookinfo/](https://istio.io/docs/examples/bookinfo/)
-
-## 9. Deploy Kafka using KUDO
+## 7. Deploy Kafka using KUDO
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
 
@@ -1018,7 +804,7 @@ Message: b'2019-07-11T16:28:48Z;5;8;8603'
 Message: b'2019-07-11T16:28:49Z;1;0;5097'
 ```
 
-## 10. Scale a Konvoy cluster
+## 8. Scale a Konvoy cluster
 
 Update the `~/.aws/credentials` file with the new information provided by your instructor.
 
@@ -1039,19 +825,19 @@ Check that there are now 5 kubelets deployed:
 kubectl get nodes
 
 NAME                                         STATUS   ROLES    AGE     VERSION
-ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.3
-ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.3
-ip-10-0-129-204.us-west-2.compute.internal   Ready    <none>   6m56s   v1.14.3
-ip-10-0-130-230.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.3
-ip-10-0-130-44.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.3
-ip-10-0-192-227.us-west-2.compute.internal   Ready    master   3h14m   v1.14.3
-ip-10-0-194-159.us-west-2.compute.internal   Ready    master   3h15m   v1.14.3
-ip-10-0-195-109.us-west-2.compute.internal   Ready    master   3h13m   v1.14.3
+ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.4
+ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.4
+ip-10-0-129-204.us-west-2.compute.internal   Ready    <none>   6m56s   v1.14.4
+ip-10-0-130-230.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.4
+ip-10-0-130-44.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.4
+ip-10-0-192-227.us-west-2.compute.internal   Ready    master   3h14m   v1.14.4
+ip-10-0-194-159.us-west-2.compute.internal   Ready    master   3h15m   v1.14.4
+ip-10-0-195-109.us-west-2.compute.internal   Ready    master   3h13m   v1.14.4
 ```
 
-## 11. Upgrade a Konvoy cluster
+## 9. Upgrade a Konvoy cluster
 
-Edit the `cluster.yaml` file to change the Kubernetes version from `1.14.3` to `1.14.4`:
+Edit the `cluster.yaml` file to change the Kubernetes version from `1.14.4` to `1.15.1`:
 ```
 ...
 kind: ClusterConfiguration
@@ -1061,7 +847,7 @@ metadata:
   creationTimestamp: "2019-07-10T08:24:35.1379638Z"
 spec:
   kubernetes:
-    version: 1.14.4
+    version: 1.15.1
 ...
 ```
 
@@ -1214,8 +1000,7 @@ curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons 
 curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 ```
 
-
-## 12. Konvoy monitoring
+## 10. Konvoy monitoring
 
 In Konvoy, all the metrics are stored in a Prometheus cluster and exposed through Grafana.
 
@@ -1257,7 +1042,7 @@ Select `Prometheus` in the `Prometheus` field and click on `Import`.
 
 ![Grafana Kafka](images/grafana-kafka.png)
 
-## 13. Konvoy logging/debugging
+## 11. Konvoy logging/debugging
 
 In Konvoy, all the logs are stored in an Elasticsearch cluster and exposed through Kibana.
 
@@ -1360,3 +1145,88 @@ spec:
 EOF
 ```
 ![dashboard nginx](images/trafik_nginx_200.png)
+
+## 12. Setting up an external identity provider
+
+Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
+
+Google's OAuth 2.0 APIs can be used for both authentication and authorization.
+
+Go to [Google’s developer console](https://console.developers.google.com/) and create a project.
+
+Select that project.
+
+In the Credentials tab of that project start with setting up the OAuth consent screen.
+
+Here it is important to configure Authorized domains: add the DNS name via which your Konvoy cluster is publicly reachable, i.e. <public-cluster-dns-name> in this example.
+
+Save the OAuth consent screen configuration.
+
+Press Create credentials, select OAuth client ID, and then Web application.
+
+Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/callback`.
+
+![google-idp-application](images/google-idp-application.png)
+
+Save the configuration and note down the client ID and the client secret.
+
+![google-idp-credentials](images/google-idp-credentials.png)
+
+Update the `~/.aws/credentials` file with the new information provided by your instructor.
+
+Edit the `cluster.yaml` file and update the `dex` section as below:
+
+```
+- name: dex
+  enabled: true
+  values: |
+    config:
+      connectors:
+      - type: oidc
+        id: google
+        name: Google Accounts
+        config:
+          issuer: https://accounts.google.com
+          clientID: <client ID>
+          clientSecret: <client secret>
+          redirectURI: https://<public-cluster-dns-name>/dex/callback
+          userIDKey: email
+          userNameKey: email
+```
+
+And run `./konvoy up` again to apply the change.
+
+Run the following command to provide admin rights to your Google account:
+
+```bash
+cat <<EOF | kubectl create -f -
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admin-binding
+subjects:
+- kind: User
+  name: <your Google email>
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
+When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
+
+![google-idp-token](images/google-idp-token.png)
+
+Follow the instructions in the page, but make sure to indicate the right URL on the step below:
+
+```bash
+kubectl config set-cluster kubernetes-cluster \
+    --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
+    --server=https://<public-cluster-dns-name>
+```
+
+Run the following command to check that you can administer the Kubernetes cluster with your Google account:
+
+```bash
+kubectl get nodes
+```
