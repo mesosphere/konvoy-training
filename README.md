@@ -106,13 +106,13 @@ A tag is useful to track the AWS instances related to your Konvoy cluster (for e
 Deploy your cluster using the command below:
 
 ```bash
-./konvoy up
+./konvoy up --yes
 ```
 
 The output should be similar to:
 
 ```
-./konvoy up                                                                    
+./konvoy up --yes                                                                  
 This process will take about 15 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
 
 STAGE [Provisioning Infrastructure]
@@ -189,13 +189,14 @@ You can check that the Kubernetes cluster has been deployed using the version `1
 ```bash
 kubectl get nodes
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   12m   v1.14.4
-ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   12m   v1.14.4
-ip-10-0-130-230.us-west-2.compute.internal   Ready    <none>   12m   v1.14.4
-ip-10-0-130-44.us-west-2.compute.internal    Ready    <none>   12m   v1.14.4
-ip-10-0-192-227.us-west-2.compute.internal   Ready    master   14m   v1.14.4
-ip-10-0-194-159.us-west-2.compute.internal   Ready    master   15m   v1.14.4
-ip-10-0-195-109.us-west-2.compute.internal   Ready    master   13m   v1.14.4
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   39m   v1.15.1
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   39m   v1.15.1
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   39m   v1.15.1
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   39m   v1.15.1
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   39m   v1.15.1
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   42m   v1.15.1
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   40m   v1.15.1
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   41m   v1.15.1
 ```
 
 ## 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
@@ -637,18 +638,12 @@ Login with the user `admin` and the password `password`.
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
 
-Go back to the konvoy directory:
-
-```bash
-cd ..
-```
-
 Run the following commands to deploy KUDO on your Kubernetes cluster:
 
 ```bash
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/master/docs/deployment/00-prereqs.yaml
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/master/docs/deployment/10-crds.yaml
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/master/docs/deployment/20-deployment.yaml
+kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/00-prereqs.yaml
+kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/10-crds.yaml
+kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/20-deployment.yaml
 ```
 
 Check the status of the KUDO controller:
@@ -669,8 +664,8 @@ brew install kudo-cli
 Install the KUDO CLI (on Linux):
 
 ```bash
-wget https://github.com/kudobuilder/kudo/releases/download/v0.3.1/kubectl-kudo_0.3.1_linux_x86_64
-sudo mv kubectl-kudo_0.3.1_linux_x86_64 /usr/bin/kubectl-kudo
+wget https://github.com/kudobuilder/kudo/releases/download/v0.5.0/kubectl-kudo_0.5.0_linux_x86_64
+sudo mv kubectl-kudo_0.5.0_linux_x86_64 /usr/bin/kubectl-kudo
 chmod +x /usr/bin/kubectl-kudo
 ```
 
@@ -725,10 +720,14 @@ kubectl kudo plan status --instance=kafka
 
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-0.1.1" Active-Plan: "kafka-deploy-260200627")
-    └── Plan deploy (serial strategy) [COMPLETE]
-        └── Phase deploy-kafka (serial strategy) [COMPLETE]
-            └── Step deploy (COMPLETE)
+└── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-859819617")
+    ├── Plan deploy (serial strategy) [COMPLETE]
+    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │       └── Step deploy (COMPLETE)
+    └── Plan not-allowed (serial strategy) [NOT ACTIVE]
+        └── Phase not-allowed (serial strategy) [NOT ACTIVE]
+            └── Step not-allowed (serial strategy) [NOT ACTIVE]
+                └── not-allowed [NOT ACTIVE]
 ```
 
 And check that the corresponding Pods are running:
@@ -804,40 +803,97 @@ Message: b'2019-07-11T16:28:48Z;5;8;8603'
 Message: b'2019-07-11T16:28:49Z;1;0;5097'
 ```
 
+KUDO is creating CRDs (new objects) in Kubernetes and you can get information about these objects like you can get informations about pods, deployments, ...
+
+Run this command to get the list of CRDs created by KUDO:
+
+```bash
+kubectl get crds | grep kudo
+
+instances.kudo.dev                               2019-08-08T12:35:25Z
+operators.kudo.dev                               2019-08-08T12:35:25Z
+operatorversions.kudo.dev                        2019-08-08T12:35:25Z
+planexecutions.kudo.dev                          2019-08-08T12:35:25Z
+```
+
+Now list the KUDO instances running using the following command:
+
+```bash
+kubectl get instances.kudo.dev
+
+NAME    AGE
+kafka   18m
+zk      33m
+```
+
+And get information about the KUDO Kafka instance:
+
+```bash
+kubectl get instances.kudo.dev kafka -o yaml
+
+apiVersion: kudo.dev/v1alpha1
+kind: Instance
+metadata:
+  creationTimestamp: "2019-08-08T12:52:32Z"
+  generation: 4
+  labels:
+    controller-tools.k8s.io: "1.0"
+    kudo.dev/operator: kafka
+  name: kafka
+  namespace: default
+  resourceVersion: "11525"
+  selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
+  uid: e3e64836-ce23-4e5d-af80-a8de83b2a0ad
+spec:
+  operatorVersion:
+    name: kafka-0.2.0
+status:
+  activePlan:
+    apiVersion: kudo.dev/v1alpha1
+    kind: PlanExecution
+    name: kafka-deploy-859819617
+    namespace: default
+    uid: c447e6ee-3679-4f35-aaa9-b08b8d3d3d17
+  status: COMPLETE
+```
+
+This is also the approach you take to delete a running instance (`kubectl delete instances.kudo.dev kafka`), but you can keep it running.
+
 ## 8. Scale a Konvoy cluster
 
 Update the `~/.aws/credentials` file with the new information provided by your instructor.
 
-Edit the `cluster.yaml` file to change the worker count from 4 to 5:
+Edit the `cluster.yaml` file to change the worker count from 5 to 6:
 ```
 ...
 nodePools:
 - name: worker
-  count: 5
+  count: 6
 ...
 ```
 
-And run `./konvoy up` again.
+And run `./konvoy up --yes` again.
 
-Check that there are now 5 kubelets deployed:
+Check that there are now 6 kubelets deployed:
 
 ```
 kubectl get nodes
 
-NAME                                         STATUS   ROLES    AGE     VERSION
-ip-10-0-128-68.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.4
-ip-10-0-129-150.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.4
-ip-10-0-129-204.us-west-2.compute.internal   Ready    <none>   6m56s   v1.14.4
-ip-10-0-130-230.us-west-2.compute.internal   Ready    <none>   3h13m   v1.14.4
-ip-10-0-130-44.us-west-2.compute.internal    Ready    <none>   3h13m   v1.14.4
-ip-10-0-192-227.us-west-2.compute.internal   Ready    master   3h14m   v1.14.4
-ip-10-0-194-159.us-west-2.compute.internal   Ready    master   3h15m   v1.14.4
-ip-10-0-195-109.us-west-2.compute.internal   Ready    master   3h13m   v1.14.4
+NAME                                         STATUS   ROLES    AGE    VERSION
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.1
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.15.1
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.15.1
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.15.1
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.1
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.1
 ```
 
 ## 9. Upgrade a Konvoy cluster
 
-Edit the `cluster.yaml` file to change the Kubernetes version from `1.14.4` to `1.15.1`:
+Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.1` to `1.15.2` in the 2 corresponding fields:
 ```
 ...
 kind: ClusterConfiguration
@@ -847,146 +903,138 @@ metadata:
   creationTimestamp: "2019-07-10T08:24:35.1379638Z"
 spec:
   kubernetes:
-    version: 1.15.1
+    version: 1.15.2
+...
+  - name: worker
+  addons:
+    configVersion: stable-1.15.2-0
 ...
 ```
 
 ```bash
-./konvoy upgrade kubernetes
+./konvoy up --yes --upgrade --force-upgrade
 
-This process will take about 20 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
+This process will take about 15 minutes to complete (additional time may be required for larger clusters)
+
+STAGE [Provisioning Infrastructure]
+
+Initializing provider plugins...
+
+Terraform has been successfully initialized!
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+
+random_id.id: Refreshing state... (ID: jKY)
+
+...
+
+No changes. Infrastructure is up-to-date.
+
+This means that Terraform did not detect any differences between your
+configuration and real physical resources that exist. As a result, no
+actions need to be performed.
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+cluster_name = konvoy_v1.0.0-8ca6
+vpc_id = vpc-0941bb098eb24080d
+
+STAGE [Running Preflights]
+
+...
 
 STAGE [Determining Upgrade Safety]
 
-ip-10-0-128-199.us-west-2.compute.internal                             [OK]
-ip-10-0-128-60.us-west-2.compute.internal (will not be upgraded)       [WARNING]
+ip-10-0-192-92.us-west-2.compute.internal                              [OK]
+ip-10-0-193-240.us-west-2.compute.internal                             [OK]
+ip-10-0-193-61.us-west-2.compute.internal                              [OK]
+ip-10-0-128-206.us-west-2.compute.internal                             [OK]
+ip-10-0-128-252.us-west-2.compute.internal                             [WARNING]
   - Pod "default/http-echo-1" is not being managed by a controller. Upgrading this node might result in data or availability loss.
-  - Pod "default/redis" is not being managed by a controller. Upgrading this node might result in data or availability loss.
-ip-10-0-129-147.us-west-2.compute.internal (will not be upgraded)      [WARNING]
   - Pod "default/http-echo-2" is not being managed by a controller. Upgrading this node might result in data or availability loss.
-ip-10-0-130-132.us-west-2.compute.internal                             [OK]
+  - Pod "default/redis" is not being managed by a controller. Upgrading this node might result in data or availability loss.
+ip-10-0-129-141.us-west-2.compute.internal                             [OK]
+ip-10-0-129-176.us-west-2.compute.internal                             [OK]
+ip-10-0-129-184.us-west-2.compute.internal                             [WARNING]
+  - Pod managed by ReplicaSet "default/ebs-dynamic-app-68b598758" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/ebs-dynamic-app-68b598758" are running on this node.
+  - Pod managed by ReplicaSet "default/kudo-kafka-consumer-6b4dd5cd59" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/kudo-kafka-consumer-6b4dd5cd59" are running on this node.
+ip-10-0-131-169.us-west-2.compute.internal                             [WARNING]
+  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "plugins", which is unsafe for upgrades.
+  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "tmp", which is unsafe for upgrades.
+  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "plugin-dir", which is unsafe for upgrades.
+  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "secrets-dir", which is unsafe for upgrades.
+  - Pod managed by ReplicaSet "default/jenkins-c79f457cb" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/jenkins-c79f457cb" are running on this node.
+  - Pod managed by ReplicaSet "default/kudo-kafka-generator-d655d6dff" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/kudo-kafka-generator-d655d6dff" are running on this node.
+  - Pod managed by StatefulSet "kudo-system/kudo-controller-manager" is running on this node, and the StatefulSet does not have a replica count greater than 1.
 
 STAGE [Upgrading Kubernetes]
-
-PLAY [Upgrade Control Plane] ************************************************************************************************************************************************************
-
-TASK [Gathering Facts] ******************************************************************************************************************************************************************
-ok: [10.0.192.88]
-
-TASK [packages-kubeadm : install kubeadm rpm package] ***********************************************************************************************************************************
-changed: [10.0.192.88]
-
-TASK [packages-kubeadm : load br_netfilter kernel module] *******************************************************************************************************************************
-ok: [10.0.192.88]
-
-TASK [packages-kubeadm : set bridge-nf-call-iptables to 1] ******************************************************************************************************************************
-ok: [10.0.192.88] => (item=net.bridge.bridge-nf-call-ip6tables)
-ok: [10.0.192.88] => (item=net.bridge.bridge-nf-call-iptables)
 
 ...
 
 PLAY [Upgrade Nodes] ********************************************************************************************************************************************************************
 
-TASK [Gathering Facts] ******************************************************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [packages-kubeadm : install kubeadm rpm package] ***********************************************************************************************************************************
-changed: [10.0.130.132]
-
-TASK [packages-kubeadm : load br_netfilter kernel module] *******************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [packages-kubeadm : set bridge-nf-call-iptables to 1] ******************************************************************************************************************************
-ok: [10.0.130.132] => (item=net.bridge.bridge-nf-call-ip6tables)
-ok: [10.0.130.132] => (item=net.bridge.bridge-nf-call-iptables)
-
-TASK [packages-kubeadm : set net.ipv4.ip_forward to 1] **********************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [kubeadm-upgrade-nodes : read marker file] *****************************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [kubeadm-upgrade-nodes : decode marker file] ***************************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [kubeadm-upgrade-nodes : get node name] ********************************************************************************************************************************************
-ok: [10.0.130.132 -> ec2-54-202-94-86.us-west-2.compute.amazonaws.com]
-
-TASK [kubeadm-upgrade-nodes : set node name fact] ***************************************************************************************************************************************
-ok: [10.0.130.132]
+...
 
 TASK [kubeadm-upgrade-nodes : drain node] ***********************************************************************************************************************************************
-changed: [10.0.130.132 -> ec2-54-202-94-86.us-west-2.compute.amazonaws.com]
+changed: [10.0.129.184 -> ec2-54-191-70-155.us-west-2.compute.amazonaws.com]
 
-TASK [kubeadm-upgrade-nodes : run kubeadm upgrade] **************************************************************************************************************************************
-changed: [10.0.130.132]
+...
 
-TASK [marker-file : write out marker file] **********************************************************************************************************************************************
-changed: [10.0.130.132]
+STAGE [Deploying Enabled Addons]
+helm                                                                   [OK]
+dashboard                                                              [OK]
+awsebscsiprovisioner                                                   [OK]
+opsportal                                                              [OK]
+fluentbit                                                              [OK]
+traefik                                                                [OK]
+kommander                                                              [OK]
+elasticsearch                                                          [OK]
+prometheus                                                             [OK]
+traefik-forward-auth                                                   [OK]
+dex                                                                    [OK]
+prometheusadapter                                                      [OK]
+kibana                                                                 [OK]
+elasticsearchexporter                                                  [OK]
+velero                                                                 [OK]
+dex-k8s-authenticator                                                  [OK]
 
-TASK [packages-containerd : create containerd systemd directory] ************************************************************************************************************************
-ok: [10.0.130.132]
+STAGE [Removing Disabled Addons]
 
-TASK [packages-containerd : create containerd directory] ********************************************************************************************************************************
-ok: [10.0.130.132]
+Kubernetes cluster and addons deployed successfully!
 
-TASK [packages-containerd : copy default containerd configuration to remote] ************************************************************************************************************
-ok: [10.0.130.132]
+Run `./konvoy apply kubeconfig` to update kubectl credentials.
 
-TASK [packages-containerd : copy containerd configuration override to remote] ***********************************************************************************************************
-skipping: [10.0.130.132]
+Navigate to the URL below to access various services running in the cluster.
+  https://a1efd30f824244733adc1fb95157b9b1-2077667181.us-west-2.elb.amazonaws.com/ops/landing
+And login using the credentials below.
+  Username: angry_williams
+  Password: TNFGnFrZjhqaF0SNLoCzN3gvqrEsviTYxvMyuPv8KHU13ob6eNa0N7LfSVhd07Xk
 
-TASK [packages-containerd : copy HTTP proxy drop-in to remote] **************************************************************************************************************************
-ok: [10.0.130.132]
+If the cluster was recently created, the dashboard and services may take a few minutes to be accessible.
+```
 
-TASK [packages-containerd : install libseccomp rpm package] *****************************************************************************************************************************
-ok: [10.0.130.132]
+Check the version of Kubernetes:
 
-TASK [packages-containerd : install containerd.io rpm package] **************************************************************************************************************************
-ok: [10.0.130.132]
+```bash
+kubectl get nodes
 
-TASK [packages-containerd : ensure containerd service is started] ***********************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [packages-kubernetes : create kubelet systemd directory] ***************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [packages-kubernetes : copy HTTP proxy drop-in to remote] **************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [packages-kubernetes : install nfs-utils rpm package] ******************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [packages-kubernetes : install kubelet rpm package] ********************************************************************************************************************************
-changed: [10.0.130.132]
-
-TASK [packages-kubernetes : install kubectl rpm package] ********************************************************************************************************************************
-skipping: [10.0.130.132]
-
-TASK [packages-kubernetes : install kubeadm rpm package] ********************************************************************************************************************************
-ok: [10.0.130.132]
-
-RUNNING HANDLER [packages-containerd : reload systemd] **********************************************************************************************************************************
-changed: [10.0.130.132]
-
-RUNNING HANDLER [packages-kubernetes : restart kubelet] *********************************************************************************************************************************
-changed: [10.0.130.132]
-
-RUNNING HANDLER [packages-kubernetes : kubelet health] **********************************************************************************************************************************
-ok: [10.0.130.132]
-
-TASK [uncordon node] ********************************************************************************************************************************************************************
-changed: [10.0.130.132 -> ec2-54-202-94-86.us-west-2.compute.amazonaws.com]
-
-PLAY RECAP ******************************************************************************************************************************************************************************
-10.0.128.199               : ok=28   changed=8    unreachable=0    failed=0   
-10.0.130.132               : ok=28   changed=8    unreachable=0    failed=0   
-10.0.192.88                : ok=29   changed=7    unreachable=0    failed=0   
-10.0.193.156               : ok=29   changed=7    unreachable=0    failed=0   
-10.0.194.83                : ok=29   changed=7    unreachable=0    failed=0   
-
-
-Kubernetes cluster upgraded successfully!
+NAME                                         STATUS   ROLES    AGE   VERSION
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.2
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.2
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.2
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.2
 ```
 
 Check that the Redis and the http-echo apps are still accessible
@@ -1158,7 +1206,7 @@ Select that project.
 
 In the Credentials tab of that project start with setting up the OAuth consent screen.
 
-Here it is important to configure Authorized domains: add the DNS name via which your Konvoy cluster is publicly reachable, i.e. <public-cluster-dns-name> in this example.
+Here it is important to configure Authorized domains: add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`).
 
 Save the OAuth consent screen configuration.
 
@@ -1171,6 +1219,24 @@ Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/cal
 Save the configuration and note down the client ID and the client secret.
 
 ![google-idp-credentials](images/google-idp-credentials.png)
+
+Run the following command to provide admin rights to your Google account:
+
+```bash
+cat <<EOF | kubectl create -f -
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admin-binding
+subjects:
+- kind: User
+  name: <your Google email>
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
 
 Update the `~/.aws/credentials` file with the new information provided by your instructor.
 
@@ -1194,25 +1260,8 @@ Edit the `cluster.yaml` file and update the `dex` section as below:
           userNameKey: email
 ```
 
-And run `./konvoy up` again to apply the change.
+And run `./konvoy up --yes` again to apply the change.
 
-Run the following command to provide admin rights to your Google account:
-
-```bash
-cat <<EOF | kubectl create -f -
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: admin-binding
-subjects:
-- kind: User
-  name: <your Google email>
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
-EOF
-```
 When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
 
 ![google-idp-token](images/google-idp-token.png)
@@ -1222,7 +1271,7 @@ Follow the instructions in the page, but make sure to indicate the right URL on 
 ```bash
 kubectl config set-cluster kubernetes-cluster \
     --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
-    --server=https://<public-cluster-dns-name>
+    --server=https://<public-cluster-dns-name>:6443
 ```
 
 Run the following command to check that you can administer the Kubernetes cluster with your Google account:
