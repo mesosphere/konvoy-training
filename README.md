@@ -10,22 +10,20 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)](#2-expose-a-kubernetes-application-using-a-service-type-load-balancer-l4)
 * [3. Expose a Kubernetes Application using an Ingress (L7)](#3-expose-a-kubernetes-application-using-an-ingress-l7)
 * [4. Leverage Network Policies to restrict access](#4-leverage-network-policies-to-restrict-access)
-* [5. Leverage persistent storage using CSI](#6-leverage-persistent-storage-using-csi)
-* [6. Deploy Jenkins using Helm](#7-deploy-jenkins-using-helm)
-* [7. Deploy Kafka using KUDO](#9-deploy-kafka-using-kudo)
-* [8. Scale a Konvoy cluster](#10-scale-a-konvoy-cluster)
-* [9. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
-* [10. Konvoy monitoring](#12-konvoy-monitoring)
-* [11. Konvoy logging/debugging](#13-konvoy-loggingdebugging)
-* [12. Setting up an external identity provider](#14-setting-up-an-external-identity-provider)
+* [5. Leverage persistent storage using CSI](#5-leverage-persistent-storage-using-csi)
+* [6. Deploy Jenkins using Helm](#6-deploy-jenkins-using-helm)
+* [7. Deploy Apache Kafka using KUDO](#7-deploy-apache-kafka-using-kudo)
+* [8. Scale a Konvoy cluster](#8-scale-a-konvoy-cluster)
+* [9. Konvoy monitoring](#9-konvoy-monitoring)
+* [10. Konvoy logging/debugging](#10-konvoy-loggingdebugging)
+* [11. Setting up an external identity provider](#11-setting-up-an-external-identity-provider)
+* [12. Upgrade a Konvoy cluster](#12-upgrade-a-konvoy-cluster)
 
 ## Prerequisites
 
 You need either a Linux, MacOS or a Windows laptop.
 
 >For Windows, you need to use the [Google Cloud Shell](https://console.cloud.google.com/cloudshell).
-
-Follow the instructions in [Quickstart](../quickstart.md) and deploy a Kubernetes cluster.
 
 If you use your laptop, you need to have Docker installed.
 
@@ -101,6 +99,18 @@ spec:
         count: 5
 ```
 
+Change also the Kubernetes version from `1.15.2` to `1.15.2` in the 2 corresponding fields:
+```
+...
+spec:
+  kubernetes:
+    version: 1.15.1
+...
+  addons:
+    configVersion: stable-1.15.1-0
+...
+```
+
 A tag is useful to track the AWS instances related to your Konvoy cluster (for example).
 
 Deploy your cluster using the command below:
@@ -118,51 +128,50 @@ This process will take about 15 minutes to complete (additional time may be requ
 STAGE [Provisioning Infrastructure]
 
 Initializing provider plugins...
-- Checking for available provider plugins on https://releases.hashicorp.com...
-- Downloading plugin for provider "local" (1.3.0)...
-- Downloading plugin for provider "random" (2.1.2)...
-- Downloading plugin for provider "aws" (2.18.0)...
+
+...
 
 Terraform has been successfully initialized!
 
 ...
 
 STAGE [Deploying Enabled Addons]
-awsebscsidriver                                                        [OK]
-opsportal                                                              [OK]
-calico                                                                 [OK]
 helm                                                                   [OK]
-awsebscsidriverstorageclassdefault                                     [OK]
 dashboard                                                              [OK]
 fluentbit                                                              [OK]
-kommander                                                              [OK]
-velero                                                                 [OK]
+awsebscsiprovisioner                                                   [OK]
 traefik                                                                [OK]
+opsportal                                                              [OK]
+kommander                                                              [OK]
 prometheus                                                             [OK]
 elasticsearch                                                          [OK]
-kibana                                                                 [OK]
+dex                                                                    [OK]
 elasticsearchexporter                                                  [OK]
+kibana                                                                 [OK]
+traefik-forward-auth                                                   [OK]
 prometheusadapter                                                      [OK]
+dex-k8s-authenticator                                                  [OK]
+velero                                                                 [OK]
 
 STAGE [Removing Disabled Addons]
-dex-k8s-authenticator                                                  [OK]
-dex                                                                    [OK]
-metallb                                                                [OK]
-localvolumeprovisioner                                                 [OK]
-awsstorageclassdefault                                                 [OK]
-localstorageclassdefault                                               [OK]
-awsstorageclass                                                        [OK]
-awsebscsidriverstorageclass                                            [OK]
-localstorageclass                                                      [OK]
 
 Kubernetes cluster and addons deployed successfully!
+
 Run `./konvoy apply kubeconfig` to update kubectl credentials.
+
 Navigate to the URL below to access various services running in the cluster.
-  https://ac67953eca32e11e996bb0aa99e2620a-1499310797.us-west-2.elb.amazonaws.com/ops/portal
+  https://a7e039f1a05a54f45b36e063f5aee077-287582892.us-west-2.elb.amazonaws.com/ops/landing
 And login using the credentials below.
-  Username: zen_ritchie
-  Password: LWeKMAUJs1zxUY7ELApHXn8BPcwUI37tL39Ls8VHZrCGtGOpBaJ1JuSGScu1CunL
+  Username: goofy_einstein
+  Password: tUeARRKxM8PfrIy2cjFc1jI0Hr2I0duzlttr1LzRTKoDooQJ0d1yyutjNv4NLHvy
+
 If the cluster was recently created, the dashboard and services may take a few minutes to be accessible.
+```
+
+If you get any error during the deployment of the addons (it can happen with network connectivity issues), then, you can run the following command to redeploy them:
+
+```
+./konvoy deploy addons --yes
 ```
 
 As soon as your cluster is successfully deployed, the URL and the credentials to access your cluster are displayed.
@@ -181,6 +190,7 @@ Click on the `Kubernetes Dashboard` icon to open it.
 To configure kubectl to manage your cluster, you simply need to run the following command:
 
 ```
+mv ~/.kube/config ~/.kube/config.old
 ./konvoy apply kubeconfig
 ```
 
@@ -189,14 +199,14 @@ You can check that the Kubernetes cluster has been deployed using the version `1
 ```bash
 kubectl get nodes
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   39m   v1.15.1
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   39m   v1.15.1
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   39m   v1.15.1
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   39m   v1.15.1
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   39m   v1.15.1
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   42m   v1.15.1
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   40m   v1.15.1
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   41m   v1.15.1
+ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
+ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.1
+ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
+ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
+ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
+ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.1
+ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.1
+ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.1
 ```
 
 ## 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
@@ -281,6 +291,8 @@ quit
 Connection closed by foreign host.
 ```
 
+If you don't have `telnet` installed in your machine, you can use `nc` instead.
+
 ## 3. Expose a Kubernetes Application using an Ingress (L7)
 
 Deploy 2 web application Pods on your Kubernetes cluster running the following command:
@@ -342,6 +354,8 @@ curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons 
 curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 ```
 
+You can also set some Traefik annotations to use some advanced features as described in this [document](https://docs.traefik.io/configuration/backends/kubernetes/).
+
 ## 4. Leverage Network Policies to restrict access
 
 By default, all the pods can access all the services inside and outside the Kubernetes clusters and services exposed to the external world can be accessed by anyone. Kubernetes Network Policies can be used to restrict access.
@@ -357,7 +371,7 @@ When a Kubernetes cluster is deployed by Konvoy, a Calico cluster is automatical
 ### Why is this Important?
 In many cases, you want to restrict communications between services. For example, you often want some micro services to be reachable only other specific micro services.
 
-In this lab, we restrict access to ingresses, so you may thing that it's useless as we can simply not expose these apps if we want to restrict access. But, in fact, it makes sense to also create network policies to avoid cases where an app is exposed by mistake.
+In this lab, we restrict access to ingresses, so you may think that it's useless as we can simply not expose these apps if we want to restrict access. But, in fact, it makes sense to also create network policies to avoid cases where an app is exposed by mistake.
 
 Create a network policy to deny any ingress
 
@@ -428,7 +442,7 @@ spec:
 EOF
 ```
 
-Check that the Redis and the http-echo apps are now accessible
+Wait for a minute and check that the Redis and the http-echo apps are now accessible
 
 ```bash
 telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
@@ -466,6 +480,29 @@ The goal of CSI is to establish a standardized mechanism for Container Orchestra
 
 By creating an industry standard interface, the CSI initiative sets ground rules in order to minimize user confusion. By providing a pluggable standardized interface, the community will be able to adopt and maintain new CSI-enabled storage drivers to their kubernetes clusters as they mature. Choosing a solution that supports CSI integration will allow your business to adopt the latest and greatest storage solutions with ease.
 
+When Konvoy is deployed on AWS, a `StorageClass` is created automatically as you can see below:
+
+```
+kubectl get sc awsebscsiprovisioner -o yaml
+
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  annotations:
+    kubernetes.io/description: AWS EBS CSI provisioner StorageClass
+    storageclass.kubernetes.io/is-default-class: "true"
+  creationTimestamp: "2019-08-12T10:43:23Z"
+  name: awsebscsiprovisioner
+  resourceVersion: "1573"
+  selfLink: /apis/storage.k8s.io/v1/storageclasses/awsebscsiprovisioner
+  uid: 413745a0-ec52-4917-afb5-70bdf8f2a606
+parameters:
+  type: gp2
+provisioner: ebs.csi.aws.com
+reclaimPolicy: Delete
+volumeBindingMode: WaitForFirstConsumer
+```
+
 Create the Kubernetes PersistentVolumeClaim using the following command:
 
 ```bash
@@ -484,7 +521,32 @@ spec:
 EOF
 ```
 
-Create a Kubernetes Deployment that will use this PersistentVolumeClaim using the following command:
+Run the following command to check the status of the `PersistentVolumeClaim`:
+
+```bash
+kubectl describe pvc dynamic
+
+Name:          dynamic
+Namespace:     default
+StorageClass:  awsebscsiprovisioner
+Status:        Pending
+Volume:        
+Labels:        <none>
+Annotations:   <none>
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      
+Access Modes:  
+VolumeMode:    Filesystem
+Events:
+  Type       Reason                Age               From                         Message
+  ----       ------                ----              ----                         -------
+  Normal     WaitForFirstConsumer  3s (x3 over 21s)  persistentvolume-controller  waiting for first consumer to be created before binding
+Mounted By:  <none>
+```
+
+As you can see, it is waiting for a `Pod` to use it to provision the AWS EBS volume.
+
+Create a Kubernetes Deployment that will use this `PersistentVolumeClaim` using the following command:
 
 ```bash
 cat <<EOF | kubectl create -f -
@@ -532,7 +594,7 @@ pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
 kubectl exec -i $pod cat /data/out.txt
 ```
 
-Delete the Pod using the following command:
+Delete the Pod using the following command (it will take some time to complete):
 
 ```bash
 kubectl delete pod $pod
@@ -611,7 +673,7 @@ NAME     SECRETS  AGE
 jenkins  1        1s
 ```
 
-Finally, run the following command to get the URL of the Load Balancer created on AWS for this service:
+Then, run the following command to get the URL of the Load Balancer created on AWS for this service:
 
 ```bash
 kubectl get svc jenkins
@@ -634,7 +696,7 @@ Go to the corresponding URL to access the Gitlab.
 
 Login with the user `admin` and the password `password`.
 
-## 7. Deploy Kafka using KUDO
+## 7. Deploy Apache Kafka using KUDO
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
 
@@ -702,15 +764,15 @@ And check that the corresponding Pods are running:
 ```bash
 kubectl get pods | grep zk
 
-zk-zk-0                            1/1     Running   0          2m48s
-zk-zk-1                            1/1     Running   0          2m48s
-zk-zk-2                            1/1     Running   0          2m48s
+zk-zookeeper-0                    1/1     Running   0          81s
+zk-zookeeper-1                    1/1     Running   0          81s
+zk-zookeeper-2                    1/1     Running   0          81s
 ```
 
-Deploy Kafka using KUDO:
+Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
 
 ```bash
-kubectl kudo install kafka --instance=kafka
+kubectl kudo install kafka --instance=kafka --version=0.1.2
 ```
 
 Check the status of the deployment:
@@ -720,7 +782,7 @@ kubectl kudo plan status --instance=kafka
 
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-859819617")
+└── kafka (Operator-Version: "kafka-0.1.2" Active-Plan: "kafka-deploy-975266742")
     ├── Plan deploy (serial strategy) [COMPLETE]
     │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
     │       └── Step deploy (COMPLETE)
@@ -735,9 +797,9 @@ And check that the corresponding Pods are running:
 ```bash
 kubectl get pods | grep kafka
 
-zk-zk-0                            1/1     Running   0          2m48s
-zk-zk-1                            1/1     Running   0          2m48s
-zk-zk-2                            1/1     Running   0          2m48s
+kafka-kafka-0                          1/1     Running   0          39s
+kafka-kafka-1                          1/1     Running   0          58s
+kafka-kafka-2                          1/1     Running   0          118s
 ```
 
 Produce messages in Kafka:
@@ -810,10 +872,10 @@ Run this command to get the list of CRDs created by KUDO:
 ```bash
 kubectl get crds | grep kudo
 
-instances.kudo.dev                               2019-08-08T12:35:25Z
-operators.kudo.dev                               2019-08-08T12:35:25Z
-operatorversions.kudo.dev                        2019-08-08T12:35:25Z
-planexecutions.kudo.dev                          2019-08-08T12:35:25Z
+instances.kudo.dev                               2019-08-21T09:30:46Z
+operators.kudo.dev                               2019-08-21T09:30:45Z
+operatorversions.kudo.dev                        2019-08-21T09:30:45Z
+planexecutions.kudo.dev                          2019-08-21T09:30:46Z
 ```
 
 Now list the KUDO instances running using the following command:
@@ -834,16 +896,75 @@ kubectl get instances.kudo.dev kafka -o yaml
 apiVersion: kudo.dev/v1alpha1
 kind: Instance
 metadata:
-  creationTimestamp: "2019-08-08T12:52:32Z"
+  creationTimestamp: "2019-08-21T13:05:09Z"
   generation: 4
   labels:
     controller-tools.k8s.io: "1.0"
     kudo.dev/operator: kafka
   name: kafka
   namespace: default
-  resourceVersion: "11525"
+  resourceVersion: "35698"
   selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
-  uid: e3e64836-ce23-4e5d-af80-a8de83b2a0ad
+  uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
+spec:
+  operatorVersion:
+    name: kafka-0.1.2
+status:
+  activePlan:
+    apiVersion: kudo.dev/v1alpha1
+    kind: PlanExecution
+    name: kafka-deploy-975266742
+    namespace: default
+    uid: 33331fe8-e8cc-4eac-b60e-dbfff894ca3d
+  status: COMPLETE
+```
+
+This is also the approach you take to delete a running instance (`kubectl delete instances.kudo.dev kafka`), but you can keep it running.
+
+Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka operator is 0.2.0) using the following command:
+
+```bash
+kubectl kudo upgrade kafka --version=0.2.0 --instance kafka
+
+operatorversion.kudo.dev/v1alpha1/kafka-0.2.0 successfully created
+instance./kafka successfully updated
+```
+
+Check the status of the upgrade:
+
+```bash
+kubectl kudo plan status --instance=kafka
+
+Plan(s) for "kafka" in namespace "default":
+.
+└── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-857547438")
+    ├── Plan deploy (serial strategy) [COMPLETE]
+    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │       └── Step deploy (COMPLETE)
+    └── Plan not-allowed (serial strategy) [NOT ACTIVE]
+        └── Phase not-allowed (serial strategy) [NOT ACTIVE]
+            └── Step not-allowed (serial strategy) [NOT ACTIVE]
+                └── not-allowed [NOT ACTIVE]
+```
+
+And get information about the upgraded KUDO Kafka instance:
+
+```bash
+kubectl get instances.kudo.dev kafka -o yaml
+
+apiVersion: kudo.dev/v1alpha1
+kind: Instance
+metadata:
+  creationTimestamp: "2019-08-21T13:05:09Z"
+  generation: 6
+  labels:
+    controller-tools.k8s.io: "1.0"
+    kudo.dev/operator: kafka
+  name: kafka
+  namespace: default
+  resourceVersion: "35828"
+  selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
+  uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
 spec:
   operatorVersion:
     name: kafka-0.2.0
@@ -851,13 +972,52 @@ status:
   activePlan:
     apiVersion: kudo.dev/v1alpha1
     kind: PlanExecution
-    name: kafka-deploy-859819617
+    name: kafka-deploy-857547438
     namespace: default
-    uid: c447e6ee-3679-4f35-aaa9-b08b8d3d3d17
+    uid: c2163e4a-b3a0-4889-b8dd-0953c6e4bead
   status: COMPLETE
 ```
 
-This is also the approach you take to delete a running instance (`kubectl delete instances.kudo.dev kafka`), but you can keep it running.
+You can also easily update the configuration of your Kafka cluster.
+
+For example, you can add more brokers using the command below.
+
+```bash
+kubectl patch instance kafka -p '{"spec":{"parameters":{"BROKER_COUNT":"5"}}}' --type=merge
+
+instance.kudo.dev/kafka patched
+```
+
+Check the status of the upgrade:
+
+```bash
+kubectl kudo plan status --instance=kafka
+
+Plan(s) for "kafka" in namespace "default":
+.
+└── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-294386986")
+    ├── Plan deploy (serial strategy) [COMPLETE]
+    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │       └── Step deploy (COMPLETE)
+    └── Plan not-allowed (serial strategy) [NOT ACTIVE]
+        └── Phase not-allowed (serial strategy) [NOT ACTIVE]
+            └── Step not-allowed (serial strategy) [NOT ACTIVE]
+                └── not-allowed [NOT ACTIVE]
+```
+
+And check that the corresponding Pods are running:
+
+```bash
+kubectl get pods | grep kafka
+
+kafka-kafka-0                          1/1     Running   0          34s
+kafka-kafka-1                          1/1     Running   0          54s
+kafka-kafka-2                          1/1     Running   0          104s
+kafka-kafka-3                          1/1     Running   0          2m50s
+kafka-kafka-4                          1/1     Running   0          2m27s
+kudo-kafka-consumer-6b4dd5cd59-xs6hn   1/1     Running   0          3h34m
+kudo-kafka-generator-d655d6dff-mx9fz   1/1     Running   0          3h34m
+```
 
 ## 8. Scale a Konvoy cluster
 
@@ -866,9 +1026,9 @@ Update the `~/.aws/credentials` file with the new information provided by your i
 Edit the `cluster.yaml` file to change the worker count from 5 to 6:
 ```
 ...
-nodePools:
-- name: worker
-  count: 6
+  nodePools:
+  - name: worker
+    count: 6
 ...
 ```
 
@@ -891,164 +1051,7 @@ ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.1
 ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.1
 ```
 
-## 9. Upgrade a Konvoy cluster
-
-Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.1` to `1.15.2` in the 2 corresponding fields:
-```
-...
-kind: ClusterConfiguration
-apiVersion: konvoy.mesosphere.io/v1alpha1
-metadata:
-  name: konvoy_v0.3.0
-  creationTimestamp: "2019-07-10T08:24:35.1379638Z"
-spec:
-  kubernetes:
-    version: 1.15.2
-...
-  - name: worker
-  addons:
-    configVersion: stable-1.15.2-0
-...
-```
-
-```bash
-./konvoy up --yes --upgrade --force-upgrade
-
-This process will take about 15 minutes to complete (additional time may be required for larger clusters)
-
-STAGE [Provisioning Infrastructure]
-
-Initializing provider plugins...
-
-Terraform has been successfully initialized!
-Refreshing Terraform state in-memory prior to plan...
-The refreshed state will be used to calculate this plan, but will not be
-persisted to local or remote state storage.
-
-random_id.id: Refreshing state... (ID: jKY)
-
-...
-
-No changes. Infrastructure is up-to-date.
-
-This means that Terraform did not detect any differences between your
-configuration and real physical resources that exist. As a result, no
-actions need to be performed.
-
-Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
-
-Outputs:
-
-cluster_name = konvoy_v1.0.0-8ca6
-vpc_id = vpc-0941bb098eb24080d
-
-STAGE [Running Preflights]
-
-...
-
-STAGE [Determining Upgrade Safety]
-
-ip-10-0-192-92.us-west-2.compute.internal                              [OK]
-ip-10-0-193-240.us-west-2.compute.internal                             [OK]
-ip-10-0-193-61.us-west-2.compute.internal                              [OK]
-ip-10-0-128-206.us-west-2.compute.internal                             [OK]
-ip-10-0-128-252.us-west-2.compute.internal                             [WARNING]
-  - Pod "default/http-echo-1" is not being managed by a controller. Upgrading this node might result in data or availability loss.
-  - Pod "default/http-echo-2" is not being managed by a controller. Upgrading this node might result in data or availability loss.
-  - Pod "default/redis" is not being managed by a controller. Upgrading this node might result in data or availability loss.
-ip-10-0-129-141.us-west-2.compute.internal                             [OK]
-ip-10-0-129-176.us-west-2.compute.internal                             [OK]
-ip-10-0-129-184.us-west-2.compute.internal                             [WARNING]
-  - Pod managed by ReplicaSet "default/ebs-dynamic-app-68b598758" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
-  - All replicas of the ReplicaSet "default/ebs-dynamic-app-68b598758" are running on this node.
-  - Pod managed by ReplicaSet "default/kudo-kafka-consumer-6b4dd5cd59" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
-  - All replicas of the ReplicaSet "default/kudo-kafka-consumer-6b4dd5cd59" are running on this node.
-ip-10-0-131-169.us-west-2.compute.internal                             [WARNING]
-  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "plugins", which is unsafe for upgrades.
-  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "tmp", which is unsafe for upgrades.
-  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "plugin-dir", which is unsafe for upgrades.
-  - Pod "default/jenkins-c79f457cb-7h88l" is using EmptyDir volume "secrets-dir", which is unsafe for upgrades.
-  - Pod managed by ReplicaSet "default/jenkins-c79f457cb" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
-  - All replicas of the ReplicaSet "default/jenkins-c79f457cb" are running on this node.
-  - Pod managed by ReplicaSet "default/kudo-kafka-generator-d655d6dff" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
-  - All replicas of the ReplicaSet "default/kudo-kafka-generator-d655d6dff" are running on this node.
-  - Pod managed by StatefulSet "kudo-system/kudo-controller-manager" is running on this node, and the StatefulSet does not have a replica count greater than 1.
-
-STAGE [Upgrading Kubernetes]
-
-...
-
-PLAY [Upgrade Nodes] ********************************************************************************************************************************************************************
-
-...
-
-TASK [kubeadm-upgrade-nodes : drain node] ***********************************************************************************************************************************************
-changed: [10.0.129.184 -> ec2-54-191-70-155.us-west-2.compute.amazonaws.com]
-
-...
-
-STAGE [Deploying Enabled Addons]
-helm                                                                   [OK]
-dashboard                                                              [OK]
-awsebscsiprovisioner                                                   [OK]
-opsportal                                                              [OK]
-fluentbit                                                              [OK]
-traefik                                                                [OK]
-kommander                                                              [OK]
-elasticsearch                                                          [OK]
-prometheus                                                             [OK]
-traefik-forward-auth                                                   [OK]
-dex                                                                    [OK]
-prometheusadapter                                                      [OK]
-kibana                                                                 [OK]
-elasticsearchexporter                                                  [OK]
-velero                                                                 [OK]
-dex-k8s-authenticator                                                  [OK]
-
-STAGE [Removing Disabled Addons]
-
-Kubernetes cluster and addons deployed successfully!
-
-Run `./konvoy apply kubeconfig` to update kubectl credentials.
-
-Navigate to the URL below to access various services running in the cluster.
-  https://a1efd30f824244733adc1fb95157b9b1-2077667181.us-west-2.elb.amazonaws.com/ops/landing
-And login using the credentials below.
-  Username: angry_williams
-  Password: TNFGnFrZjhqaF0SNLoCzN3gvqrEsviTYxvMyuPv8KHU13ob6eNa0N7LfSVhd07Xk
-
-If the cluster was recently created, the dashboard and services may take a few minutes to be accessible.
-```
-
-Check the version of Kubernetes:
-
-```bash
-kubectl get nodes
-
-NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.2
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.2
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.2
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.2
-```
-
-Check that the Redis and the http-echo apps are still accessible
-
-```bash
-telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
-```
-
-```bash
-curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-```
-
-## 10. Konvoy monitoring
+## 9. Konvoy monitoring
 
 In Konvoy, all the metrics are stored in a Prometheus cluster and exposed through Grafana.
 
@@ -1062,7 +1065,7 @@ You can also access the Prometheus UI to see all the metrics available by clicki
 
 ![Prometheus UI](images/prometheus.png)
 
-KUDO Kafka operator comes by default the JMX Exporter agent enabled.
+The KUDO Kafka operator comes by default the JMX Exporter agent enabled.
 
 When Kafka operator deployed with parameter `METRICS_ENABLED=true` (which defaults to `true`) then:
 
@@ -1090,7 +1093,7 @@ Select `Prometheus` in the `Prometheus` field and click on `Import`.
 
 ![Grafana Kafka](images/grafana-kafka.png)
 
-## 11. Konvoy logging/debugging
+## 10. Konvoy logging/debugging
 
 In Konvoy, all the logs are stored in an Elasticsearch cluster and exposed through Kibana.
 
@@ -1194,7 +1197,7 @@ EOF
 ```
 ![dashboard nginx](images/trafik_nginx_200.png)
 
-## 12. Setting up an external identity provider
+## 11. Setting up an external identity provider
 
 Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
 
@@ -1206,7 +1209,7 @@ Select that project.
 
 In the Credentials tab of that project start with setting up the OAuth consent screen.
 
-Here it is important to configure Authorized domains: add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`).
+Indicate an `Application name` and add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`) into `Authorized domains`.
 
 Save the OAuth consent screen configuration.
 
@@ -1220,7 +1223,7 @@ Save the configuration and note down the client ID and the client secret.
 
 ![google-idp-credentials](images/google-idp-credentials.png)
 
-Run the following command to provide admin rights to your Google account:
+Run the following command (after inserting your email address) to provide admin rights to your Google account:
 
 ```bash
 cat <<EOF | kubectl create -f -
@@ -1243,21 +1246,21 @@ Update the `~/.aws/credentials` file with the new information provided by your i
 Edit the `cluster.yaml` file and update the `dex` section as below:
 
 ```
-- name: dex
-  enabled: true
-  values: |
-    config:
-      connectors:
-      - type: oidc
-        id: google
-        name: Google Accounts
+    - name: dex
+      enabled: true
+      values: |
         config:
-          issuer: https://accounts.google.com
-          clientID: <client ID>
-          clientSecret: <client secret>
-          redirectURI: https://<public-cluster-dns-name>/dex/callback
-          userIDKey: email
-          userNameKey: email
+          connectors:
+          - type: oidc
+            id: google
+            name: Google Accounts
+            config:
+              issuer: https://accounts.google.com
+              clientID: <client ID>
+              clientSecret: <client secret>
+              redirectURI: https://<public-cluster-dns-name>/dex/callback
+              userIDKey: email
+              userNameKey: email
 ```
 
 And run `./konvoy up --yes` again to apply the change.
@@ -1266,16 +1269,175 @@ When the update is finished, Go to `https://<public-cluster-dns-name>/token` and
 
 ![google-idp-token](images/google-idp-token.png)
 
-Follow the instructions in the page, but make sure to indicate the right URL on the step below:
+Follow the instructions in the page, but use the command below in the second step to get the right value for the `server` parameter:
 
 ```bash
 kubectl config set-cluster kubernetes-cluster \
     --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
-    --server=https://<public-cluster-dns-name>:6443
+    --server=$(kubectl config view | grep server | awk '{ print $2 }')
 ```
 
 Run the following command to check that you can administer the Kubernetes cluster with your Google account:
 
 ```bash
 kubectl get nodes
+```
+
+## 12. Upgrade a Konvoy cluster
+
+Update the `~/.aws/credentials` file with the new information provided by your instructor.
+
+Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.1` to `1.15.2` in the 2 corresponding fields:
+```
+...
+spec:
+  kubernetes:
+    version: 1.15.2
+...
+  - name: worker
+  addons:
+    configVersion: stable-1.15.2-0
+...
+```
+
+```bash
+./konvoy up --yes --upgrade --force-upgrade
+
+This process will take about 15 minutes to complete (additional time may be required for larger clusters)
+
+STAGE [Provisioning Infrastructure]
+
+Initializing provider plugins...
+
+Terraform has been successfully initialized!
+Refreshing Terraform state in-memory prior to plan...
+The refreshed state will be used to calculate this plan, but will not be
+persisted to local or remote state storage.
+
+random_id.id: Refreshing state... (ID: jKY)
+
+...
+
+No changes. Infrastructure is up-to-date.
+
+This means that Terraform did not detect any differences between your
+configuration and real physical resources that exist. As a result, no
+actions need to be performed.
+
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+
+Outputs:
+
+cluster_name = konvoy_v1.1.1-8ca6
+vpc_id = vpc-0941bb098eb24080d
+
+STAGE [Running Preflights]
+
+...
+
+STAGE [Determining Upgrade Safety]
+
+ip-10-0-193-118.us-west-2.compute.internal                             [OK]
+ip-10-0-193-232.us-west-2.compute.internal                             [OK]
+ip-10-0-194-21.us-west-2.compute.internal                              [OK]
+ip-10-0-128-239.us-west-2.compute.internal                             [WARNING]
+  - All replicas of the ReplicaSet "default/nginx-7c45b84548" are running on this node.
+ip-10-0-128-64.us-west-2.compute.internal                              [WARNING]
+  - Pod "default/jenkins-c79f457cb-vrjjq" is using EmptyDir volume "plugins", which is unsafe for upgrades.
+  - Pod "default/jenkins-c79f457cb-vrjjq" is using EmptyDir volume "tmp", which is unsafe for upgrades.
+  - Pod "default/jenkins-c79f457cb-vrjjq" is using EmptyDir volume "plugin-dir", which is unsafe for upgrades.
+  - Pod "default/jenkins-c79f457cb-vrjjq" is using EmptyDir volume "secrets-dir", which is unsafe for upgrades.
+  - Pod "default/http-echo-2" is not being managed by a controller. Upgrading this node might result in data or availability loss.
+  - Pod managed by ReplicaSet "default/jenkins-c79f457cb" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/jenkins-c79f457cb" are running on this node.
+  - Pod managed by ReplicaSet "default/kudo-kafka-generator-d655d6dff" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/kudo-kafka-generator-d655d6dff" are running on this node.
+ip-10-0-129-247.us-west-2.compute.internal                             [WARNING]
+  - Pod "default/http-echo-1" is not being managed by a controller. Upgrading this node might result in data or availability loss.
+  - Pod managed by StatefulSet "kudo-system/kudo-controller-manager" is running on this node, and the StatefulSet does not have a replica count greater than 1.
+ip-10-0-129-41.us-west-2.compute.internal                              [OK]
+ip-10-0-129-88.us-west-2.compute.internal                              [WARNING]
+  - Pod managed by ReplicaSet "default/ebs-dynamic-app-68b598758" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/ebs-dynamic-app-68b598758" are running on this node.
+ip-10-0-130-84.us-west-2.compute.internal                              [WARNING]
+  - Pod managed by ReplicaSet "default/kudo-kafka-consumer-6b4dd5cd59" is running on this node, and the ReplicaSet does not have a replica count greater than 1.
+  - All replicas of the ReplicaSet "default/kudo-kafka-consumer-6b4dd5cd59" are running on this node.
+  - Pod "default/redis" is not being managed by a controller. Upgrading this node might result in data or availability loss.
+
+STAGE [Upgrading Kubernetes]
+
+...
+
+PLAY [Upgrade Nodes] ********************************************************************************************************************************************************************
+
+...
+
+TASK [kubeadm-upgrade-nodes : drain node] ***********************************************************************************************************************************************
+changed: [10.0.129.184 -> ec2-54-191-70-155.us-west-2.compute.amazonaws.com]
+
+...
+
+STAGE [Deploying Enabled Addons]
+helm                                                                   [OK]
+dashboard                                                              [OK]
+awsebscsiprovisioner                                                   [OK]
+opsportal                                                              [OK]
+fluentbit                                                              [OK]
+traefik                                                                [OK]
+kommander                                                              [OK]
+elasticsearch                                                          [OK]
+prometheus                                                             [OK]
+traefik-forward-auth                                                   [OK]
+dex                                                                    [OK]
+prometheusadapter                                                      [OK]
+kibana                                                                 [OK]
+elasticsearchexporter                                                  [OK]
+velero                                                                 [OK]
+dex-k8s-authenticator                                                  [OK]
+
+STAGE [Removing Disabled Addons]
+
+Kubernetes cluster and addons deployed successfully!
+
+Run `./konvoy apply kubeconfig` to update kubectl credentials.
+
+Navigate to the URL below to access various services running in the cluster.
+  https://a1efd30f824244733adc1fb95157b9b1-2077667181.us-west-2.elb.amazonaws.com/ops/landing
+And login using the credentials below.
+  Username: angry_williams
+  Password: TNFGnFrZjhqaF0SNLoCzN3gvqrEsviTYxvMyuPv8KHU13ob6eNa0N7LfSVhd07Xk
+
+If the cluster was recently created, the dashboard and services may take a few minutes to be accessible.
+```
+
+If there is any error during the upgrade, run the `./konvoy up --yes --upgrade --force-upgrade` again. It can happen when the `drain` command times out.
+
+Without the `--force-upgrade` flag, the Kubernetes nodes that have under replicated pods wouldn't be upgraded.
+
+Check the version of Kubernetes:
+
+```bash
+kubectl get nodes
+
+NAME                                         STATUS   ROLES    AGE   VERSION
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.2
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.2
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.2
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.2
+```
+
+Check that the Redis and the http-echo apps are still accessible
+
+```bash
+telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+```
+
+```bash
+curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 ```
