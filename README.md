@@ -700,21 +700,6 @@ Login with the user `admin` and the password `password`.
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
 
-Run the following commands to deploy KUDO on your Kubernetes cluster:
-
-```bash
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/00-prereqs.yaml
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/10-crds.yaml
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/842c7f19a0a361751f0dab330faf3be147c9c4b3/docs/deployment/20-deployment.yaml```
-
-Check the status of the KUDO controller:
-
-```bash
-kubectl get pods -n kudo-system
-NAME                        READY   STATUS    RESTARTS   AGE
-kudo-controller-manager-0   1/1     Running   0          84s
-```
-
 Install the KUDO CLI (on Mac):
 
 ```bash
@@ -722,12 +707,33 @@ brew tap kudobuilder/tap
 brew install kudo-cli
 ```
 
+Run `brew upgrade kudo-cli` if you have already installed the KUDO CLI previously.
+
 Install the KUDO CLI (on Linux):
 
 ```bash
-wget https://github.com/kudobuilder/kudo/releases/download/v0.5.0/kubectl-kudo_0.5.0_linux_x86_64
-sudo mv kubectl-kudo_0.5.0_linux_x86_64 /usr/bin/kubectl-kudo
+wget https://github.com/kudobuilder/kudo/releases/download/v0.6.0/kubectl-kudo_0.6.0_linux_x86_64
+sudo mv kubectl-kudo_0.6.0_linux_x86_64 /usr/bin/kubectl-kudo
 chmod +x /usr/bin/kubectl-kudo
+```
+
+Run the following commands to deploy KUDO on your Kubernetes cluster:
+
+```bash
+kubectl kudo init
+
+Creating /Users/djannot/.kudo
+Creating /Users/djannot/.kudo/repository
+Creating /Users/djannot/.kudo/repository/repositories.yaml
+$KUDO_HOME has been configured at /Users/djannot/.kudo.
+```
+
+Check the status of the KUDO controller:
+
+```bash
+kubectl get pods -n kudo-system
+NAME                        READY   STATUS    RESTARTS   AGE
+kudo-controller-manager-0   1/1     Running   0          84s
 ```
 
 Deploy ZooKeeper using KUDO:
@@ -980,11 +986,11 @@ status:
 And check that the corresponding Pods have been replaced:
 
 ```bash
-kubectl get pods | grep zk
+kubectl get pods | grep kafka
 
-zk-zookeeper-0                    1/1     Running   0          3m33s
-zk-zookeeper-1                    1/1     Running   0          88s
-zk-zookeeper-2                    1/1     Running   0          12s
+kafka-kafka-0                          1/1     Running   0          3m33s
+kafka-kafka-1                          1/1     Running   0          88s
+kafka-kafka-2                          1/1     Running   0          12s
 ```
 
 You can also easily update the configuration of your Kafka cluster.
