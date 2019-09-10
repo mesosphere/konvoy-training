@@ -99,15 +99,15 @@ spec:
         count: 5
 ```
 
-Change also the Kubernetes version from `1.15.2` to `1.15.2` in the 2 corresponding fields:
+Change also the Kubernetes version to `1.15.2` in the 2 corresponding fields:
 ```
 ...
 spec:
   kubernetes:
-    version: 1.15.1
+    version: 1.15.2
 ...
   addons:
-    configVersion: stable-1.15.1-0
+    configVersion: stable-1.15.2-0
 ...
 ```
 
@@ -194,19 +194,19 @@ mv ~/.kube/config ~/.kube/config.old
 ./konvoy apply kubeconfig
 ```
 
-You can check that the Kubernetes cluster has been deployed using the version `1.14.4` with 3 control nodes and 3 workers nodes
+You can check that the Kubernetes cluster has been deployed using the version `1.15.2` with 3 control nodes and 5 workers nodes
 
 ```bash
 kubectl get nodes
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.1
-ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.1
-ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.1
-ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.1
+ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.2
+ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.2
+ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.2
+ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 ```
 
 ## 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
@@ -692,7 +692,7 @@ done
 echo "Open http://$(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname}):8080 to access the Jenkins UI"
 ```
 
-Go to the corresponding URL to access the Gitlab.
+Go to the URL displayed to access Jenkins.
 
 Login with the user `admin` and the password `password`.
 
@@ -1049,15 +1049,15 @@ Check that there are now 6 kubelets deployed:
 kubectl get nodes
 
 NAME                                         STATUS   ROLES    AGE    VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.1
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.15.1
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.15.1
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.15.1
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.1
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.1
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.15.2
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.15.2
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.2
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.2
 ```
 
 ## 9. Konvoy monitoring
@@ -1164,10 +1164,10 @@ EOF
 The `Traefik dashboard` indicates the nginx application is ready to receive traffic but if you try access nginx with URL listed below, you will notice `404 Not Found` error like:
 
 ```bash
-
 curl -k https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/
-
 ```
+
+Don't forget the trailing slash at the end of the URL. Otherwise, you won't generate a 404 error.
 
 ![Traefik nginx](images/trafik_404.png)
 
@@ -1231,6 +1231,8 @@ Press Create credentials, select OAuth client ID, and then Web application.
 Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/callback`.
 
 ![google-idp-application](images/google-idp-application.png)
+
+Don't forget to hit ENTER when setting up oauth in the google console for the redirect url and other fields, otherwise the values are not saved if you just hit the save button.
 
 Save the configuration and note down the client ID and the client secret.
 
@@ -1300,16 +1302,16 @@ kubectl get nodes
 
 Update the `~/.aws/credentials` file with the new information provided by your instructor.
 
-Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.1` to `1.15.2` in the 2 corresponding fields:
+Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.2` to `1.15.3` in the 2 corresponding fields:
 ```
 ...
 spec:
   kubernetes:
-    version: 1.15.2
+    version: 1.15.3
 ...
   - name: worker
   addons:
-    configVersion: stable-1.15.2-0
+    configVersion: stable-1.15.3-0
 ...
 ```
 
@@ -1433,24 +1435,17 @@ Check the version of Kubernetes:
 kubectl get nodes
 
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.2
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.2
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.2
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.2
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.3
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.3
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.3
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.3
 ```
 
-Check that the Redis and the http-echo apps are still accessible
+Check that the `Jenkins` and the `ebs-dynamic-app` apps are still accessible.
 
-```bash
-telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
-```
-
-```bash
-curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-```
+The `Redis` and the `http-echo` apps aren't running anymore as they haven't been deployed using a `deployment`.
