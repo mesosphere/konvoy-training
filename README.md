@@ -23,47 +23,33 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 
 You need either a Linux, MacOS or a Windows laptop.
 
+
+
+## Jumpserver
+
+Jumpservers have been deployed for each student with all prerequisites installed. First, go to the student data spreadsheet and select a host but entering your name.  Then, download the ssh-private-key (id_rsa_student#.pem) and change the file permissions.  Finally, ssh to the ipaddress of your assigned jumpserver using the -i option to specify the identity file to be used.  The username for the Jumpserver is "centos".
+
+For Mac and Linux clients you must change the permission on the file.
+```
+chmod 400 id_rsa_student#.pem
+```
+```
+ssh -i id_rsa_student#.pem centos@jumpserver-ip-address
+```
+
+
 >For Windows, you need to use the [Google Cloud Shell](https://console.cloud.google.com/cloudshell).
+Once your Google Cloud Shell has started, you will have to copy the contents of you id_rsa_student#.pem file to a local file in the cloud shell.  Then change the permission on the file and ssh into the jump host.
 
-If you use your laptop, you need to have Docker installed.
-
-You also need to install the AWS CLI running the following commands:
-
-```bash
-pip3 install awscli --upgrade --user
-sudo cp ~/.local/bin/aws /usr/bin/
-```
-
-Add the following information provided by the instructor to the `~/.aws/credentials` file (or create the file if necessary):
 
 ```
-[Temp]
-aws_access_key_id     = xxx
-aws_secret_access_key = xxx
-aws_session_token     = xxx
+vi id_rsa_student#.pem
 ```
-
-This token will be valid for one hour.
-
-Run the following command to use this profile:
-
-```bash
-export AWS_PROFILE=Temp
 ```
-
-If you don't finish the deployment on time, the instructor will provide an updated token.
-
-Clone the Github repository and run the following commands to uncompress the Konvoy binaries:
-
-```bash
-bzip2 -d konvoy_*.tar.bz2
-tar xvf konvoy_*.tar
+chmod 400 id_rsa_student#.pem
 ```
-
-Go to the `konvoy` directory:
-
-```bash
-cd konvoy_*/
+```
+ssh -i id_rsa_student#.pem centos@jumpserver-ip-address
 ```
 
 ## 1. Deploy a Konvoy cluster
@@ -76,13 +62,13 @@ cd konvoy_*/
 There are many ways to deploy a kubernetes cluster from a fully manual procedure to using a fully automated or opinionated SaaS. Cluster sizes can also widely vary from a single node deployment on your laptop, to thousands of nodes in a single logical cluster, or even across multiple clusters. Thus, picking a deployment model that suits the scale that you need as your business grows is important.
 
 
-Execute the following command to create a `cluster.yaml` template file:
+Change directories into the lab directory:
 
-```bash
-./konvoy init
+```
+cd ~/lab
 ```
 
-Edit the `cluster.yaml` file to add the `expiration` tag and update the number of workers as below:
+Edit the `cluster.yaml` file to update the number of workers as below:
 
 ```
 spec:
@@ -116,13 +102,13 @@ A tag is useful to track the AWS instances related to your Konvoy cluster (for e
 Deploy your cluster using the command below:
 
 ```bash
-./konvoy up --yes
+konvoy up --yes
 ```
 
 The output should be similar to:
 
 ```
-./konvoy up --yes                                                                  
+konvoy up --yes                                                                  
 This process will take about 15 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
 
 STAGE [Provisioning Infrastructure]
@@ -157,7 +143,7 @@ STAGE [Removing Disabled Addons]
 
 Kubernetes cluster and addons deployed successfully!
 
-Run `./konvoy apply kubeconfig` to update kubectl credentials.
+Run `konvoy apply kubeconfig` to update kubectl credentials.
 
 Navigate to the URL below to access various services running in the cluster.
   https://a7e039f1a05a54f45b36e063f5aee077-287582892.us-west-2.elb.amazonaws.com/ops/landing
@@ -171,14 +157,14 @@ If the cluster was recently created, the dashboard and services may take a few m
 If you get any error during the deployment of the addons (it can happen with network connectivity issues), then, you can run the following command to redeploy them:
 
 ```
-./konvoy deploy addons --yes
+konvoy deploy addons --yes
 ```
 
 As soon as your cluster is successfully deployed, the URL and the credentials to access your cluster are displayed.
 
 If you need to get this information later, you can execute the command below:
 ```bash
-./konvoy get ops-portal
+konvoy get ops-portal
 ```
 
 ![Konvoy UI](images/konvoy-ui.png)
@@ -191,7 +177,7 @@ To configure kubectl to manage your cluster, you simply need to run the followin
 
 ```
 mv ~/.kube/config ~/.kube/config.old
-./konvoy apply kubeconfig
+konvoy apply kubeconfig
 ```
 
 You can check that the Kubernetes cluster has been deployed using the version `1.15.2` with 3 control nodes and 5 workers nodes
@@ -1047,7 +1033,7 @@ Edit the `cluster.yaml` file to change the worker count from 5 to 6:
 ...
 ```
 
-And run `./konvoy up --yes` again.
+And run `konvoy up --yes` again.
 
 Check that there are now 6 kubelets deployed:
 
@@ -1284,7 +1270,7 @@ Edit the `cluster.yaml` file and update the `dex` section as below:
               userNameKey: email
 ```
 
-And run `./konvoy up --yes` again to apply the change.
+And run `konvoy up --yes` again to apply the change.
 
 When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
 
@@ -1322,7 +1308,7 @@ spec:
 ```
 
 ```bash
-./konvoy up --yes --upgrade --force-upgrade
+konvoy up --yes --upgrade --force-upgrade
 
 This process will take about 15 minutes to complete (additional time may be required for larger clusters)
 
@@ -1420,7 +1406,7 @@ STAGE [Removing Disabled Addons]
 
 Kubernetes cluster and addons deployed successfully!
 
-Run `./konvoy apply kubeconfig` to update kubectl credentials.
+Run `konvoy apply kubeconfig` to update kubectl credentials.
 
 Navigate to the URL below to access various services running in the cluster.
   https://a1efd30f824244733adc1fb95157b9b1-2077667181.us-west-2.elb.amazonaws.com/ops/landing
@@ -1431,7 +1417,7 @@ And login using the credentials below.
 If the cluster was recently created, the dashboard and services may take a few minutes to be accessible.
 ```
 
-If there is any error during the upgrade, run the `./konvoy up --yes --upgrade --force-upgrade` again. It can happen when the `drain` command times out.
+If there is any error during the upgrade, run the `konvoy up --yes --upgrade --force-upgrade` again. It can happen when the `drain` command times out.
 
 Without the `--force-upgrade` flag, the Kubernetes nodes that have under replicated pods wouldn't be upgraded.
 
