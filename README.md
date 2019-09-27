@@ -340,7 +340,7 @@ curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons 
 curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 ```
 
-You can also set some Traefik annotations to use some advanced features as described in this [document](https://docs.traefik.io/configuration/backends/kubernetes/).
+You can also set some Traefik annotations to use some advanced features as described in this [document](https://docs.traefik.io/providers/kubernetes-crd/).
 
 ## 4. Leverage Network Policies to restrict access
 
