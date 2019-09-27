@@ -27,7 +27,7 @@ You need either a Linux, MacOS or a Windows laptop.
 
 ## Jumpserver
 
-Jumpservers have been deployed for each student with all prerequisites installed. First, go to the student data spreadsheet and select a host but entering your name.  Then, download the ssh-private-key (id_rsa_student#.pem) and change the file permissions.  Finally, ssh to the ipaddress of your assigned jumpserver using the -i option to specify the identity file to be used.  The username for the Jumpserver is "centos".
+Jumpservers have been deployed for each student with all prerequisites installed. First, go to the student data spreadsheet and select a host by entering your name.  Then, download the ssh-private-key (id_rsa_student#.pem) and change the file permissions.  Finally, ssh to the ipaddress of your assigned jumpserver using the -i option to specify the identity file to be used.  The username for the Jumpserver is "centos".
 
 For Mac and Linux clients you must change the permission on the file.
 ```
@@ -686,14 +686,6 @@ Login with the user `admin` and the password `password`.
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
 
-Install the KUDO CLI (on Mac):
-
-```bash
-brew tap kudobuilder/tap
-brew install kudo-cli
-```
-
-Run `brew upgrade kudo-cli` if you have already installed the KUDO CLI previously.
 
 Install the KUDO CLI (on Linux):
 
@@ -1021,8 +1013,6 @@ kudo-kafka-generator-d655d6dff-mx9fz   1/1     Running   0          3h34m
 ```
 
 ## 8. Scale a Konvoy cluster
-
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
 
 Edit the `cluster.yaml` file to change the worker count from 5 to 6:
 ```
