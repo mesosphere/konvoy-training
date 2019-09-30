@@ -17,7 +17,7 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [9. Konvoy monitoring](#9-konvoy-monitoring)
 * [10. Konvoy logging/debugging](#10-konvoy-loggingdebugging)
 * [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
-* [Appendix Setting up an external identity provider] (#appendix-setting-up-an-external-identity-provider)
+* [Appendix 1. Setting up an external identity provider](#appendix-1-setting-up-an-external-identity-provider)
 
 ## Prerequisites
 
@@ -1344,7 +1344,7 @@ Check that the `Jenkins` and the `ebs-dynamic-app` apps are still accessible.
 
 The `Redis` and the `http-echo` apps aren't running anymore as they haven't been deployed using a `deployment`.
 
-## Appendix Setting up an external identity provider
+## Appendix 1. Setting up an external identity provider
 
 Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
 
