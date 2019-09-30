@@ -16,7 +16,6 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [8. Scale a Konvoy cluster](#8-scale-a-konvoy-cluster)
 * [9. Konvoy monitoring](#9-konvoy-monitoring)
 * [10. Konvoy logging/debugging](#10-konvoy-loggingdebugging)
-* [11. Setting up an external identity provider](#11-setting-up-an-external-identity-provider)
 * [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
 * [Appendix Setting up an external identity provider] (#appendix-setting-up-an-external-identity-provider)
 
@@ -1103,7 +1102,7 @@ Then, search for `redis`:
 
 You'll see all the logs related to the redis Pod and Service you deployed previously.
 
-### 13.1. Ingress troubleshooting.
+### 10.1. Ingress troubleshooting.
 
 In this section, we will leverage Konvoy logging to troubleshoot Ingress failure issue.
 
