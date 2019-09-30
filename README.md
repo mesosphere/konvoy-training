@@ -1194,8 +1194,6 @@ EOF
 
 ## 11. Upgrade a Konvoy cluster
 
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
-
 Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.2` to `1.15.3` in the 2 corresponding fields:
 ```
 ...
