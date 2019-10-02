@@ -1110,7 +1110,7 @@ We will deploy a nginx application and expose it via L7 loadbalancer. The applic
 
 `http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/`
 
-* first, let's deploy a nginx application and scale it to 3
+* 1st, let's deploy a nginx application and scale it to 3
 
 ```bash
 kubectl run --image=nginx --replicas=3 --port=80 --restart=Always nginx
@@ -1153,7 +1153,7 @@ Don't forget the trailing slash at the end of the URL. Otherwise, you won't gene
 
 ![Traefik nginx](images/trafik_404.png)
 
-Let's troubleshooting this failure with Konvoy Kibana.
+Let's troubleshoot this failure with Konvoy Kibana.
 
 ![Kibana nginx](images/kibana_nginx.png)
 
