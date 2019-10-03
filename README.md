@@ -68,37 +68,6 @@ Change directories into the lab directory:
 cd ~/lab
 ```
 
-Edit the `cluster.yaml` file to update the number of workers as below:
-
-```
-spec:
-  provider: aws
-  aws:
-    region: us-west-2
-    availabilityZones:
-    - us-west-2c
-    tags:
-      owner: djannot
-      expiration: 12h
-      nodePools:
-      - name: worker
-        count: 5
-```
-
-Change also the Kubernetes version to `1.15.2` in the 2 corresponding fields:
-```
-...
-spec:
-  kubernetes:
-    version: 1.15.2
-...
-  addons:
-    configVersion: stable-1.15.2-0
-...
-```
-
-A tag is useful to track the AWS instances related to your Konvoy cluster (for example).
-
 Deploy your cluster using the command below:
 
 ```bash
