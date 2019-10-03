@@ -27,14 +27,14 @@ You need either a Linux, MacOS or a Windows laptop.
 
 ## Jumpserver
 
-Jumpservers have been deployed for each student with all prerequisites installed. First, go to the student data spreadsheet and select a host by entering your name.  Then, download the ssh-private-key (id_rsa_student#.pem) and change the file permissions.  Finally, ssh to the ipaddress of your assigned jumpserver using the -i option to specify the identity file to be used.  The username for the Jumpserver is "centos".
+Jumpservers have been deployed for each student with all prerequisites installed. First, go to the student data spreadsheet and select a host by entering your name.  Then, download the ssh-private-key (id_rsa_student#) and change the file permissions.  Finally, ssh to the ipaddress of your assigned jumpserver using the -i option to specify the identity file to be used.  The username for the Jumpserver is "centos".
 
 For Mac and Linux clients you must change the permission on the file.
 ```
-chmod 400 id_rsa_student#.pem
+chmod 400 id_rsa_student#
 ```
 ```
-ssh -i id_rsa_student#.pem centos@jumpserver-ip-address
+ssh -i id_rsa_student# centos@jumpserver-ip-address
 ```
 
 
@@ -43,13 +43,13 @@ Once your Google Cloud Shell has started, you will have to copy the contents of 
 
 
 ```
-vi id_rsa_student#.pem
+vi id_rsa_student#
 ```
 ```
-chmod 400 id_rsa_student#.pem
+chmod 400 id_rsa_student#
 ```
 ```
-ssh -i id_rsa_student#.pem centos@jumpserver-ip-address
+ssh -i id_rsa_student# centos@jumpserver-ip-address
 ```
 
 ## 1. Deploy a Konvoy cluster
@@ -160,7 +160,7 @@ If you get any error during the deployment of the addons (it can happen with net
 konvoy deploy addons --yes
 ```
 
-As soon as your cluster is successfully deployed, the URL and the credentials to access your cluster are displayed.
+As soon as your cluster is successfully deployed, the URL and the credentials to access your cluster are displayed. When you lauch your dashboard URL in your browser the first screen will ask you to select "login or generate token", select login and use the credentials provided.
 
 If you need to get this information later, you can execute the command below:
 ```bash
@@ -691,8 +691,8 @@ Install the KUDO CLI (on Linux):
 
 ```bash
 wget https://github.com/kudobuilder/kudo/releases/download/v0.7.2/kubectl-kudo_0.7.2_linux_x86_64
-sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/bin/kubectl-kudo
-chmod +x /usr/bin/kubectl-kudo
+sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/local/bin/kubectl-kudo
+chmod +x /usr/local/bin/kubectl-kudo
 ```
 
 Run the following commands to deploy KUDO on your Kubernetes cluster:
@@ -700,9 +700,7 @@ Run the following commands to deploy KUDO on your Kubernetes cluster:
 ```bash
 kubectl kudo init
 
-Creating /Users/djannot/.kudo
-Creating /Users/djannot/.kudo/repository
-Creating /Users/djannot/.kudo/repository/repositories.yaml
+
 $KUDO_HOME has been configured at /Users/djannot/.kudo.
 ```
 
@@ -725,7 +723,7 @@ No instance named 'zk' tied to this 'zookeeper' version has been found. Do you w
 instance.kudo.k8s.io/v1alpha1/zk created
 ```
 
-Check the status of the deployment:
+Check the status of the deployment: (Will only show status when deploying, otherwise will report a plan status is not found)
 
 ```bash
 kubectl kudo plan status --instance=zk
@@ -758,7 +756,7 @@ Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
 kubectl kudo install kafka --instance=kafka --version=0.1.2
 ```
 
-Check the status of the deployment:
+Check the status of the deployment:(Will only show status when deploying, otherwise will report a plan status is not found)
 
 ```bash
 kubectl kudo plan status --instance=kafka
