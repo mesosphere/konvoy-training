@@ -16,8 +16,8 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [8. Scale a Konvoy cluster](#8-scale-a-konvoy-cluster)
 * [9. Konvoy monitoring](#9-konvoy-monitoring)
 * [10. Konvoy logging/debugging](#10-konvoy-loggingdebugging)
-* [11. Setting up an external identity provider](#11-setting-up-an-external-identity-provider)
-* [12. Upgrade a Konvoy cluster](#12-upgrade-a-konvoy-cluster)
+* [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
+* [Appendix 1. Setting up an external identity provider](#appendix-1-setting-up-an-external-identity-provider)
 
 ## Prerequisites
 
@@ -1071,7 +1071,7 @@ Then, search for `redis`:
 
 You'll see all the logs related to the redis Pod and Service you deployed previously.
 
-### 13.1. Ingress troubleshooting.
+### 10.1. Ingress troubleshooting.
 
 In this section, we will leverage Konvoy logging to troubleshoot Ingress failure issue.
 
@@ -1079,7 +1079,7 @@ We will deploy a nginx application and expose it via L7 loadbalancer. The applic
 
 `http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/`
 
-* first, let's deploy a nginx application and scale it to 3
+* 1st, let's deploy a nginx application and scale it to 3
 
 ```bash
 kubectl run --image=nginx --replicas=3 --port=80 --restart=Always nginx
@@ -1122,7 +1122,7 @@ Don't forget the trailing slash at the end of the URL. Otherwise, you won't gene
 
 ![Traefik nginx](images/trafik_404.png)
 
-Let's troubleshooting this failure with Konvoy Kibana.
+Let's troubleshoot this failure with Konvoy Kibana.
 
 ![Kibana nginx](images/kibana_nginx.png)
 
@@ -1161,97 +1161,7 @@ EOF
 ```
 ![dashboard nginx](images/trafik_nginx_200.png)
 
-## 11. Setting up an external identity provider
-
-Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
-
-Google's OAuth 2.0 APIs can be used for both authentication and authorization.
-
-Go to [Google’s developer console](https://console.developers.google.com/) and create a project.
-
-Select that project.
-
-In the Credentials tab of that project start with setting up the OAuth consent screen.
-
-Indicate an `Application name` and add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`) into `Authorized domains`.
-
-Save the OAuth consent screen configuration.
-
-Press Create credentials, select OAuth client ID, and then Web application.
-
-Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/callback`.
-
-![google-idp-application](images/google-idp-application.png)
-
-Don't forget to hit ENTER when setting up oauth in the google console for the redirect url and other fields, otherwise the values are not saved if you just hit the save button.
-
-Save the configuration and note down the client ID and the client secret.
-
-![google-idp-credentials](images/google-idp-credentials.png)
-
-Run the following command (after inserting your email address) to provide admin rights to your Google account:
-
-```bash
-cat <<EOF | kubectl create -f -
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: admin-binding
-subjects:
-- kind: User
-  name: <your Google email>
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
-EOF
-```
-
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
-
-Edit the `cluster.yaml` file and update the `dex` section as below:
-
-```
-    - name: dex
-      enabled: true
-      values: |
-        config:
-          connectors:
-          - type: oidc
-            id: google
-            name: Google Accounts
-            config:
-              issuer: https://accounts.google.com
-              clientID: <client ID>
-              clientSecret: <client secret>
-              redirectURI: https://<public-cluster-dns-name>/dex/callback
-              userIDKey: email
-              userNameKey: email
-```
-
-And run `konvoy up --yes` again to apply the change.
-
-When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
-
-![google-idp-token](images/google-idp-token.png)
-
-Follow the instructions in the page, but use the command below in the second step to get the right value for the `server` parameter:
-
-```bash
-kubectl config set-cluster kubernetes-cluster \
-    --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
-    --server=$(kubectl config view | grep server | awk '{ print $2 }')
-```
-
-Run the following command to check that you can administer the Kubernetes cluster with your Google account:
-
-```bash
-kubectl get nodes
-```
-
-## 12. Upgrade a Konvoy cluster
-
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
+## 11. Upgrade a Konvoy cluster
 
 Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.2` to `1.15.3` in the 2 corresponding fields:
 ```
@@ -1400,3 +1310,91 @@ ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.3
 Check that the `Jenkins` and the `ebs-dynamic-app` apps are still accessible.
 
 The `Redis` and the `http-echo` apps aren't running anymore as they haven't been deployed using a `deployment`.
+
+## Appendix 1. Setting up an external identity provider
+
+Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
+
+Google's OAuth 2.0 APIs can be used for both authentication and authorization.
+
+Go to [Google’s developer console](https://console.developers.google.com/) and create a project.
+
+Select that project.
+
+In the Credentials tab of that project start with setting up the OAuth consent screen.
+
+Indicate an `Application name` and add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`) into `Authorized domains`.
+
+Save the OAuth consent screen configuration.
+
+Press Create credentials, select OAuth client ID, and then Web application.
+
+Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/callback`.
+
+![google-idp-application](images/google-idp-application.png)
+
+Don't forget to hit ENTER when setting up oauth in the google console for the redirect url and other fields, otherwise the values are not saved if you just hit the save button.
+
+Save the configuration and note down the client ID and the client secret.
+
+![google-idp-credentials](images/google-idp-credentials.png)
+
+Run the following command (after inserting your email address) to provide admin rights to your Google account:
+
+```bash
+cat <<EOF | kubectl create -f -
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admin-binding
+subjects:
+- kind: User
+  name: <your Google email>
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+EOF
+```
+
+
+Edit the `cluster.yaml` file and update the `dex` section as below:
+
+```
+    - name: dex
+      enabled: true
+      values: |
+        config:
+          connectors:
+          - type: oidc
+            id: google
+            name: Google Accounts
+            config:
+              issuer: https://accounts.google.com
+              clientID: <client ID>
+              clientSecret: <client secret>
+              redirectURI: https://<public-cluster-dns-name>/dex/callback
+              userIDKey: email
+              userNameKey: email
+```
+
+And run `konvoy up --yes` again to apply the change.
+
+When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
+
+![google-idp-token](images/google-idp-token.png)
+
+Follow the instructions in the page, but use the command below in the second step to get the right value for the `server` parameter:
+
+```bash
+kubectl config set-cluster kubernetes-cluster \
+    --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
+    --server=$(kubectl config view | grep server | awk '{ print $2 }')
+```
+
+Run the following command to check that you can administer the Kubernetes cluster with your Google account:
+
+```bash
+kubectl get nodes
+```
+
