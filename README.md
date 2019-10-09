@@ -17,6 +17,7 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [9. Konvoy monitoring](#9-konvoy-monitoring)
 * [10. Konvoy logging/debugging](#10-konvoy-loggingdebugging)
 * [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
+* [12. Destroy a Konvoy cluster](#12-destroy-a-konvoy-cluster)
 * [Appendix 1. Setting up an external identity provider](#appendix-1-setting-up-an-external-identity-provider)
 
 ## Prerequisites
@@ -1308,6 +1309,21 @@ ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.3
 Check that the `Jenkins` and the `ebs-dynamic-app` apps are still accessible.
 
 The `Redis` and the `http-echo` apps aren't running anymore as they haven't been deployed using a `deployment`.
+
+## 12. Destroy a Konvoy cluster
+
+When you run konvoy down, the command removes all of the AWS infrastructure resources create for the cluster, including any volumes that are backing PersistentVolumesClaims with a Delete ReclaimPolicy.
+
+To completely remove Konvoy cluster resources:
+
+Change to the directory that contains your cluster’s state files, then run the following command:
+```
+konvoy down --yes
+```
+The konvoy down command then begins removing cluster resources by deleting load balancers, security groups and volumes. It deletes these resources using the AWS API to ensure they are deleted quickly.
+
+After konvoy down removes these resources, it uses Terraform to delete the resources created by the konvoy up command and Terraform provisioning.
+
 
 ## Appendix 1. Setting up an external identity provider
 
