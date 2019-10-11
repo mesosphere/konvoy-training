@@ -146,7 +146,6 @@ Click on the `Kubernetes Dashboard` icon to open it.
 To configure kubectl to manage your cluster, you simply need to run the following command:
 
 ```
-mv ~/.kube/config ~/.kube/config.old
 konvoy apply kubeconfig
 ```
 
