@@ -77,8 +77,7 @@ konvoy up --yes
 
 The output should be similar to:
 
-```
-konvoy up --yes                                                                  
+```                                                                
 This process will take about 15 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
 
 STAGE [Provisioning Infrastructure]
@@ -154,6 +153,9 @@ You can check that the Kubernetes cluster has been deployed using the version `1
 
 ```bash
 kubectl get nodes
+```
+The output should be similar to:
+```bash
 NAME                                         STATUS   ROLES    AGE   VERSION
 ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
 ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.2
@@ -221,6 +223,8 @@ Finally, run the following command to see the URL of the Load Balancer created o
 ```bash
 kubectl get svc redis
 
+The output should be similar to:
+```bash
 NAME    TYPE           CLUSTER-IP   EXTERNAL-IP                                                               PORT(S)          AGE
 redis   LoadBalancer   10.0.51.32   a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com   6379:31423/TCP   43s
 ```
@@ -238,7 +242,10 @@ You can validate that you can access the redis Pod from your laptop using telnet
 
 ```bash
 telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+```
 
+The output should be similar to:
+```bash
 Trying 52.27.218.48...
 Connected to a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com.
 Escape character is '^]'.
@@ -298,7 +305,10 @@ Finally, run the following command to see the URL of the Load Balancer created o
 
 ```bash
 kubectl get svc traefik-kubeaddons -n kubeaddons
+```
 
+The output should be similar to:
+```bash
 NAME                 TYPE           CLUSTER-IP    EXTERNAL-IP                                                             PORT(S)                                     AGE
 traefik-kubeaddons   LoadBalancer   10.0.24.215   abf2e5bda6ca811e982140acb7ee21b7-37522315.us-west-2.elb.amazonaws.com   80:31169/TCP,443:32297/TCP,8080:31923/TCP   4h22m
 ```
@@ -440,7 +450,10 @@ When Konvoy is deployed on AWS, a `StorageClass` is created automatically as you
 
 ```
 kubectl get sc awsebscsiprovisioner -o yaml
+```
 
+The output should be similar to:
+```bash
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
@@ -481,7 +494,10 @@ Run the following command to check the status of the `PersistentVolumeClaim`:
 
 ```bash
 kubectl describe pvc dynamic
+```
 
+The output should be similar to:
+```bash
 Name:          dynamic
 Namespace:     default
 StorageClass:  awsebscsiprovisioner
@@ -583,7 +599,10 @@ To deploy the chart, you need to run the following command:
 
 ```bash
 helm install stable/jenkins --name jenkins --version 1.5.0 --set master.adminPassword=password
+```
 
+The output should be similar to:
+```bash
 NAME:   jenkins
 LAST DEPLOYED: Wed Aug  7 17:21:32 2019
 NAMESPACE: default
@@ -633,7 +652,10 @@ Then, run the following command to get the URL of the Load Balancer created on A
 
 ```bash
 kubectl get svc jenkins
+```
 
+The output should be similar to:
+```bash
 NAME      TYPE           CLUSTER-IP   EXTERNAL-IP                                                              PORT(S)          AGE
 jenkins   LoadBalancer   10.0.9.26    a71b8025991124a90b2babf7ba2a75da-492974167.us-west-2.elb.amazonaws.com   8080:30323/TCP   16m
 ```
@@ -669,15 +691,22 @@ Run the following commands to deploy KUDO on your Kubernetes cluster:
 
 ```bash
 kubectl kudo init
+```
 
+The output should be similar to:
+```bash
 
-$KUDO_HOME has been configured at /Users/djannot/.kudo.
+$KUDO_HOME has been configured at /home/centos/.kudo.
 ```
 
 Check the status of the KUDO controller:
 
 ```bash
 kubectl get pods -n kudo-system
+```
+
+The output should be similar to:
+```bash
 NAME                        READY   STATUS    RESTARTS   AGE
 kudo-controller-manager-0   1/1     Running   0          84s
 ```
@@ -686,7 +715,10 @@ Deploy ZooKeeper using KUDO:
 
 ```bash
 kubectl kudo install zookeeper --instance=zk
+```
 
+The output should be similar to:
+```bash
 operator.kudo.k8s.io/v1alpha1/zookeeper created
 operatorversion.kudo.k8s.io/v1alpha1/zookeeper-0.1.0 created
 No instance named 'zk' tied to this 'zookeeper' version has been found. Do you want to create one? (Yes/no) yes
@@ -697,7 +729,10 @@ Check the status of the deployment: (Will only show status when deploying, other
 
 ```bash
 kubectl kudo plan status --instance=zk
+```
 
+The output should be similar to:
+```bash
 Plan(s) for "zk" in namespace "default":
 .
 └── zk (Operator-Version: "zookeeper-0.1.0" Active-Plan: "zk-deploy-694218097")
@@ -714,7 +749,10 @@ And check that the corresponding Pods are running:
 
 ```bash
 kubectl get pods | grep zk
+```
 
+The output should be similar to:
+```bash
 zk-zookeeper-0                    1/1     Running   0          81s
 zk-zookeeper-1                    1/1     Running   0          81s
 zk-zookeeper-2                    1/1     Running   0          81s
@@ -730,7 +768,10 @@ Check the status of the deployment:(Will only show status when deploying, otherw
 
 ```bash
 kubectl kudo plan status --instance=kafka
+```
 
+The output should be similar to:
+```bash
 Plan(s) for "kafka" in namespace "default":
 .
 └── kafka (Operator-Version: "kafka-0.1.2" Active-Plan: "kafka-deploy-975266742")
@@ -747,7 +788,10 @@ And check that the corresponding Pods are running:
 
 ```bash
 kubectl get pods | grep kafka
+```
 
+The output should be similar to:
+```bash
 kafka-kafka-0                          1/1     Running   0          39s
 kafka-kafka-1                          1/1     Running   0          58s
 kafka-kafka-2                          1/1     Running   0          118s
@@ -808,7 +852,10 @@ Check the logs:
 
 ```bash
 kubectl logs $(kubectl get pods -l app=kudo-kafka-consumer -o jsonpath='{.items[0].metadata.name}') --follow
+```
 
+The output should be similar to:
+```bash
 Message: b'2019-07-11T16:28:45Z;0;6;4283'
 Message: b'2019-07-11T16:28:46Z;1;8;4076'
 Message: b'2019-07-11T16:28:47Z;5;2;9140'
@@ -822,7 +869,10 @@ Run this command to get the list of CRDs created by KUDO:
 
 ```bash
 kubectl get crds | grep kudo
+```
 
+The output should be similar to:
+```bash
 instances.kudo.dev                               2019-08-21T09:30:46Z
 operators.kudo.dev                               2019-08-21T09:30:45Z
 operatorversions.kudo.dev                        2019-08-21T09:30:45Z
@@ -833,7 +883,10 @@ Now list the KUDO instances running using the following command:
 
 ```bash
 kubectl get instances.kudo.dev
+```
 
+The output should be similar to:
+```bash
 NAME    AGE
 kafka   18m
 zk      33m
@@ -843,7 +896,10 @@ And get information about the KUDO Kafka instance:
 
 ```bash
 kubectl get instances.kudo.dev kafka -o yaml
+```
 
+The output should be similar to:
+```bash
 apiVersion: kudo.dev/v1alpha1
 kind: Instance
 metadata:
@@ -876,7 +932,10 @@ Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka operator is 0
 
 ```bash
 kubectl kudo upgrade kafka --version=0.2.0 --instance kafka
+```
 
+The output should be similar to:
+```bash
 operatorversion.kudo.dev/v1alpha1/kafka-0.2.0 successfully created
 instance./kafka successfully updated
 ```
@@ -885,7 +944,10 @@ Check the status of the upgrade:
 
 ```bash
 kubectl kudo plan status --instance=kafka
+```
 
+The output should be similar to:
+```bash
 Plan(s) for "kafka" in namespace "default":
 .
 └── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-857547438")
@@ -902,7 +964,10 @@ And get information about the upgraded KUDO Kafka instance:
 
 ```bash
 kubectl get instances.kudo.dev kafka -o yaml
+```
 
+The output should be similar to:
+```bash
 apiVersion: kudo.dev/v1alpha1
 kind: Instance
 metadata:
@@ -933,7 +998,10 @@ And check that the corresponding Pods have been replaced:
 
 ```bash
 kubectl get pods | grep kafka
+```
 
+The output should be similar to:
+```bash
 kafka-kafka-0                          1/1     Running   0          3m33s
 kafka-kafka-1                          1/1     Running   0          88s
 kafka-kafka-2                          1/1     Running   0          12s
@@ -945,7 +1013,10 @@ For example, you can add more brokers using the command below.
 
 ```bash
 kubectl patch instance kafka -p '{"spec":{"parameters":{"BROKER_COUNT":"5"}}}' --type=merge
+```
 
+The output should be similar to:
+```bash
 instance.kudo.dev/kafka patched
 ```
 
@@ -953,7 +1024,10 @@ Check the status of the upgrade:
 
 ```bash
 kubectl kudo plan status --instance=kafka
+```
 
+The output should be similar to:
+```bash
 Plan(s) for "kafka" in namespace "default":
 .
 └── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-294386986")
@@ -970,7 +1044,10 @@ And check that the corresponding Pods are running:
 
 ```bash
 kubectl get pods | grep kafka
+```
 
+The output should be similar to:
+```bash
 kafka-kafka-0                          1/1     Running   0          34s
 kafka-kafka-1                          1/1     Running   0          54s
 kafka-kafka-2                          1/1     Running   0          104s
@@ -997,7 +1074,10 @@ Check that there are now 6 kubelets deployed:
 
 ```
 kubectl get nodes
+```
 
+The output should be similar to:
+```bash
 NAME                                         STATUS   ROLES    AGE    VERSION
 ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
 ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
@@ -1177,7 +1257,10 @@ spec:
 
 ```bash
 konvoy up --yes --upgrade --force-upgrade
+```
 
+The output should be similar to:
+```bash
 This process will take about 15 minutes to complete (additional time may be required for larger clusters)
 
 STAGE [Provisioning Infrastructure]
@@ -1293,7 +1376,10 @@ Check the version of Kubernetes:
 
 ```bash
 kubectl get nodes
+```
 
+The output should be similar to:
+```bash
 NAME                                         STATUS   ROLES    AGE   VERSION
 ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
 ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
