@@ -681,8 +681,8 @@ The Kubernetes Universal Declarative Operator (KUDO) is a highly productive tool
 Install the KUDO CLI (on Linux):
 
 ```bash
-wget https://github.com/kudobuilder/kudo/releases/download/v0.7.2/kubectl-kudo_0.7.2_linux_x86_64
-sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/local/bin/kubectl-kudo
+wget https://github.com/kudobuilder/kudo/releases/download/v0.7.5/kubectl-kudo_0.7.5_linux_x86_64
+sudo mv kubectl-kudo_0.7.5_linux_x86_64 /usr/local/bin/kubectl-kudo
 chmod +x /usr/local/bin/kubectl-kudo
 ```
 
@@ -724,7 +724,7 @@ No instance named 'zk' tied to this 'zookeeper' version has been found. Do you w
 instance.kudo.k8s.io/v1alpha1/zk created
 ```
 
-Check the status of the deployment: (Will only show status when deploying, otherwise will report a plan status is not found)
+Check the status of the deployment: 
 
 ```bash
 kubectl kudo plan status --instance=zk
@@ -763,7 +763,7 @@ Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
 kubectl kudo install kafka --instance=kafka --version=0.1.2
 ```
 
-Check the status of the deployment:(Will only show status when deploying, otherwise will report a plan status is not found)
+Check the status of the deployment:
 
 ```bash
 kubectl kudo plan status --instance=kafka
