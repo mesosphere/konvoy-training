@@ -681,8 +681,8 @@ The Kubernetes Universal Declarative Operator (KUDO) is a highly productive tool
 Install the KUDO CLI (on Linux):
 
 ```bash
-wget https://github.com/kudobuilder/kudo/releases/download/v0.7.5/kubectl-kudo_0.7.5_linux_x86_64
-sudo mv kubectl-kudo_0.7.5_linux_x86_64 /usr/local/bin/kubectl-kudo
+wget https://github.com/kudobuilder/kudo/releases/download/v0.8.0/kubectl-kudo_0.8.0_linux_x86_64
+sudo mv kubectl-kudo_0.8.0_linux_x86_64 /usr/local/bin/kubectl-kudo
 chmod +x /usr/local/bin/kubectl-kudo
 ```
 
@@ -718,13 +718,12 @@ kubectl kudo install zookeeper --instance=zk
 
 The output should be similar to:
 ```bash
-operator.kudo.k8s.io/v1alpha1/zookeeper created
-operatorversion.kudo.k8s.io/v1alpha1/zookeeper-0.1.0 created
-No instance named 'zk' tied to this 'zookeeper' version has been found. Do you want to create one? (Yes/no) yes
-instance.kudo.k8s.io/v1alpha1/zk created
+operator.kudo.dev/v1beta1/zookeeper created
+operatorversion.kudo.dev/v1beta1/zookeeper-0.2.0 created
+instance.kudo.dev/v1beta1/zk created
 ```
 
-Check the status of the deployment: 
+Check the status of the deployment:
 
 ```bash
 kubectl kudo plan status --instance=zk
@@ -734,14 +733,18 @@ The output should be similar to:
 ```bash
 Plan(s) for "zk" in namespace "default":
 .
-└── zk (Operator-Version: "zookeeper-0.1.0" Active-Plan: "zk-deploy-694218097")
+└── zk (Operator-Version: "zookeeper-0.2.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase zookeeper (parallel strategy) [COMPLETE]
-    │       └── Step everything (COMPLETE)
+    │   ├── Phase zookeeper [COMPLETE]
+    │   │   └── Step deploy (COMPLETE)
+    │   └── Phase validation [COMPLETE]
+    │       ├── Step validation (COMPLETE)
+    │       └── Step cleanup (COMPLETE)
     └── Plan validation (serial strategy) [NOT ACTIVE]
-        └── Phase connection (parallel strategy) [NOT ACTIVE]
-            └── Step connection (parallel strategy) [NOT ACTIVE]
-                └── connection [NOT ACTIVE]
+        └── Phase connection (serial strategy) [NOT ACTIVE]
+            └── Step connection (serial strategy) [NOT ACTIVE]
+                ├── connection [NOT ACTIVE]
+                └── cleanup [NOT ACTIVE]
 ```
 
 And check that the corresponding Pods are running:
@@ -752,15 +755,15 @@ kubectl get pods | grep zk
 
 The output should be similar to:
 ```bash
-zk-zookeeper-0                    1/1     Running   0          81s
-zk-zookeeper-1                    1/1     Running   0          81s
-zk-zookeeper-2                    1/1     Running   0          81s
+zk-zookeeper-0                         1/1     Running   0          21m
+zk-zookeeper-1                         1/1     Running   0          21m
+zk-zookeeper-2                         1/1     Running   0          21m
 ```
 
-Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
+Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
 
 ```bash
-kubectl kudo install kafka --instance=kafka --version=0.1.2
+kubectl kudo install kafka --instance=kafka -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 --version=0.1.3
 ```
 
 Check the status of the deployment:
@@ -773,9 +776,9 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-0.1.2" Active-Plan: "kafka-deploy-975266742")
+└── kafka (Operator-Version: "kafka-0.1.3" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │   └── Phase deploy-kafka [COMPLETE]
     │       └── Step deploy (COMPLETE)
     └── Plan not-allowed (serial strategy) [NOT ACTIVE]
         └── Phase not-allowed (serial strategy) [NOT ACTIVE]
@@ -855,11 +858,12 @@ kubectl logs $(kubectl get pods -l app=kudo-kafka-consumer -o jsonpath='{.items[
 
 The output should be similar to:
 ```bash
-Message: b'2019-07-11T16:28:45Z;0;6;4283'
-Message: b'2019-07-11T16:28:46Z;1;8;4076'
-Message: b'2019-07-11T16:28:47Z;5;2;9140'
-Message: b'2019-07-11T16:28:48Z;5;8;8603'
-Message: b'2019-07-11T16:28:49Z;1;0;5097'
+Message: b'2019-11-12T12:23:19Z;3;4;1071'
+Message: b'2019-11-12T12:23:21Z;4;3;3095'
+Message: b'2019-11-12T12:23:22Z;3;7;8639'
+Message: b'2019-11-12T12:23:27Z;9;4;7861'
+Message: b'2019-11-12T12:23:30Z;7;5;3594'
+Message: b'2019-11-12T12:23:33Z;5;0;9985'
 ```
 
 KUDO is creating CRDs (new objects) in Kubernetes and you can get information about these objects like you can get informations about pods, deployments, ...
@@ -872,10 +876,9 @@ kubectl get crds | grep kudo
 
 The output should be similar to:
 ```bash
-instances.kudo.dev                               2019-08-21T09:30:46Z
-operators.kudo.dev                               2019-08-21T09:30:45Z
-operatorversions.kudo.dev                        2019-08-21T09:30:45Z
-planexecutions.kudo.dev                          2019-08-21T09:30:46Z
+instances.kudo.dev                               2019-11-12T12:16:19Z
+operators.kudo.dev                               2019-11-12T12:16:19Z
+operatorversions.kudo.dev                        2019-11-12T12:16:19Z
 ```
 
 Now list the KUDO instances running using the following command:
@@ -899,44 +902,64 @@ kubectl get instances.kudo.dev kafka -o yaml
 
 The output should be similar to:
 ```bash
-apiVersion: kudo.dev/v1alpha1
+apiVersion: kudo.dev/v1beta1
 kind: Instance
 metadata:
-  creationTimestamp: "2019-08-21T13:05:09Z"
-  generation: 4
+  annotations:
+    kudo.dev/last-applied-instance-state: '{"operatorVersion":{"name":"kafka-0.1.3"},"parameters":{"ZOOKEEPER_URI":"zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181"}}'
+  creationTimestamp: "2019-11-12T12:46:39Z"
+  generation: 3
   labels:
     controller-tools.k8s.io: "1.0"
     kudo.dev/operator: kafka
   name: kafka
   namespace: default
-  resourceVersion: "35698"
-  selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
-  uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
+  resourceVersion: "81847"
+  selfLink: /apis/kudo.dev/v1beta1/namespaces/default/instances/kafka
+  uid: 6f289e56-86e7-40d2-8360-f8255678a801
 spec:
   operatorVersion:
-    name: kafka-0.1.2
+    name: kafka-0.1.3
+  parameters:
+    ZOOKEEPER_URI: zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
 status:
-  activePlan:
-    apiVersion: kudo.dev/v1alpha1
-    kind: PlanExecution
-    name: kafka-deploy-975266742
-    namespace: default
-    uid: 33331fe8-e8cc-4eac-b60e-dbfff894ca3d
-  status: COMPLETE
+  aggregatedStatus:
+    status: COMPLETE
+  planStatus:
+    deploy:
+      lastFinishedRun: "2019-11-12T12:47:57Z"
+      name: deploy
+      phases:
+      - name: deploy-kafka
+        status: COMPLETE
+        steps:
+        - name: deploy
+          status: COMPLETE
+      status: COMPLETE
+      uid: e0ba11bf-d2d5-467b-b96c-c443aa0ba5ef
+    not-allowed:
+      lastFinishedRun: null
+      name: not-allowed
+      phases:
+      - name: not-allowed
+        status: NEVER_RUN
+        steps:
+        - name: not-allowed
+          status: NEVER_RUN
+      status: NEVER_RUN
 ```
 
 This is also the approach you take to delete a running instance (`kubectl delete instances.kudo.dev kafka`), but you can keep it running.
 
-Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka operator is 0.2.0) using the following command:
+Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka operator is 1.0.0) using the following command:
 
 ```bash
-kubectl kudo upgrade kafka --version=0.2.0 --instance kafka
+kubectl kudo upgrade kafka --version=1.0.0 --instance kafka
 ```
 
 The output should be similar to:
 ```bash
-operatorversion.kudo.dev/v1alpha1/kafka-0.2.0 successfully created
-instance./kafka successfully updated
+instance./kafka updated
 ```
 
 Check the status of the upgrade:
@@ -949,9 +972,9 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-857547438")
+└── kafka (Operator-Version: "kafka-1.0.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │   └── Phase deploy-kafka [COMPLETE]
     │       └── Step deploy (COMPLETE)
     └── Plan not-allowed (serial strategy) [NOT ACTIVE]
         └── Phase not-allowed (serial strategy) [NOT ACTIVE]
@@ -967,30 +990,51 @@ kubectl get instances.kudo.dev kafka -o yaml
 
 The output should be similar to:
 ```bash
-apiVersion: kudo.dev/v1alpha1
+apiVersion: kudo.dev/v1beta1
 kind: Instance
 metadata:
-  creationTimestamp: "2019-08-21T13:05:09Z"
+  annotations:
+    kudo.dev/last-applied-instance-state: '{"operatorVersion":{"name":"kafka-1.0.0"},"parameters":{"ZOOKEEPER_URI":"zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181"}}'
+  creationTimestamp: "2019-11-12T12:46:39Z"
   generation: 6
   labels:
     controller-tools.k8s.io: "1.0"
     kudo.dev/operator: kafka
   name: kafka
   namespace: default
-  resourceVersion: "35828"
-  selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
-  uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
+  resourceVersion: "82826"
+  selfLink: /apis/kudo.dev/v1beta1/namespaces/default/instances/kafka
+  uid: 6f289e56-86e7-40d2-8360-f8255678a801
 spec:
   operatorVersion:
-    name: kafka-0.2.0
+    name: kafka-1.0.0
+  parameters:
+    ZOOKEEPER_URI: zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
 status:
-  activePlan:
-    apiVersion: kudo.dev/v1alpha1
-    kind: PlanExecution
-    name: kafka-deploy-857547438
-    namespace: default
-    uid: c2163e4a-b3a0-4889-b8dd-0953c6e4bead
-  status: COMPLETE
+  aggregatedStatus:
+    status: COMPLETE
+  planStatus:
+    deploy:
+      lastFinishedRun: "2019-11-12T12:51:03Z"
+      name: deploy
+      phases:
+      - name: deploy-kafka
+        status: COMPLETE
+        steps:
+        - name: deploy
+          status: COMPLETE
+      status: COMPLETE
+      uid: 6d4016db-71d2-42dc-a8b1-0a0473f84881
+    not-allowed:
+      lastFinishedRun: null
+      name: not-allowed
+      phases:
+      - name: not-allowed
+        status: NEVER_RUN
+        steps:
+        - name: not-allowed
+          status: NEVER_RUN
+      status: NEVER_RUN
 ```
 
 And check that the corresponding Pods have been replaced:
@@ -1001,9 +1045,11 @@ kubectl get pods | grep kafka
 
 The output should be similar to:
 ```bash
-kafka-kafka-0                          1/1     Running   0          3m33s
-kafka-kafka-1                          1/1     Running   0          88s
-kafka-kafka-2                          1/1     Running   0          12s
+kafka-kafka-0                          1/1     Running   0          77s
+kafka-kafka-1                          1/1     Running   0          100s
+kafka-kafka-2                          1/1     Running   0          2m20s
+kudo-kafka-consumer-6b4dd5cd59-r7svb   1/1     Running   0          28m
+kudo-kafka-generator-d655d6dff-5pztl   1/1     Running   0          28m
 ```
 
 You can also easily update the configuration of your Kafka cluster.
@@ -1029,9 +1075,9 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-294386986")
+└── kafka (Operator-Version: "kafka-1.0.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │   └── Phase deploy-kafka [COMPLETE]
     │       └── Step deploy (COMPLETE)
     └── Plan not-allowed (serial strategy) [NOT ACTIVE]
         └── Phase not-allowed (serial strategy) [NOT ACTIVE]
@@ -1047,13 +1093,13 @@ kubectl get pods | grep kafka
 
 The output should be similar to:
 ```bash
-kafka-kafka-0                          1/1     Running   0          34s
-kafka-kafka-1                          1/1     Running   0          54s
-kafka-kafka-2                          1/1     Running   0          104s
-kafka-kafka-3                          1/1     Running   0          2m50s
-kafka-kafka-4                          1/1     Running   0          2m27s
-kudo-kafka-consumer-6b4dd5cd59-xs6hn   1/1     Running   0          3h34m
-kudo-kafka-generator-d655d6dff-mx9fz   1/1     Running   0          3h34m
+kafka-kafka-0                          1/1     Running   0          70s
+kafka-kafka-1                          1/1     Running   0          102s
+kafka-kafka-2                          1/1     Running   0          2m35s
+kafka-kafka-3                          1/1     Running   0          3m44s
+kafka-kafka-4                          1/1     Running   0          3m15s
+kudo-kafka-consumer-6b4dd5cd59-r7svb   1/1     Running   0          33m
+kudo-kafka-generator-d655d6dff-5pztl   1/1     Running   0          33m
 ```
 
 ## 8. Scale a Konvoy cluster
@@ -1496,4 +1542,3 @@ Run the following command to check that you can administer the Kubernetes cluste
 ```bash
 kubectl get nodes
 ```
-
