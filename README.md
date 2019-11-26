@@ -1160,12 +1160,12 @@ When Kafka operator deployed with parameter `METRICS_ENABLED=true` (which defaul
 Run the following command to enable Kafka metrics export:
 
 ```bash
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v0.1/resources/service-monitor.yaml
+kubectl create -f https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v1.0/resources/service-monitor.yaml
 ```
 
 In the Grafana UI, click on the + sign on the left and select `Import`.
 
-Copy the content of this [file](https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v0.1/resources/grafana-dashboard.json) as shown in the picture below.
+Copy the content of this [file](https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v1.0/resources/grafana-dashboard.json) as shown in the picture below.
 
 ![Grafana import](images/grafana-import.png)
 
