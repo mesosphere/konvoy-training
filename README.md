@@ -221,8 +221,10 @@ Finally, run the following command to see the URL of the Load Balancer created o
 
 ```bash
 kubectl get svc redis
+```
 
 The output should be similar to:
+
 ```bash
 NAME    TYPE           CLUSTER-IP   EXTERNAL-IP                                                               PORT(S)          AGE
 redis   LoadBalancer   10.0.51.32   a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com   6379:31423/TCP   43s
