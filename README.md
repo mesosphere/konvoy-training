@@ -1059,12 +1059,12 @@ You can also easily update the configuration of your Kafka cluster.
 For example, you can add more brokers using the command below.
 
 ```bash
-kubectl patch instance kafka -p '{"spec":{"parameters":{"BROKER_COUNT":"5"}}}' --type=merge
+kubectl kudo update --instance kafka -p BROKER_COUNT=5
 ```
 
 The output should be similar to:
 ```bash
-instance.kudo.dev/kafka patched
+Instance kafka was updated.
 ```
 
 Check the status of the upgrade:
