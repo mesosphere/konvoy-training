@@ -1262,7 +1262,7 @@ In terms of out example, the `Ingress` configuration we submitted to k8s was con
 
 You can, of course, configure nginx instance to serve resources at path `/applications/nginx/`. But an alternative solution is leverage `traefik` to strip PATH `/applications/nginx/` to `ROOT (/)` before route requests to nginx.
 
-According to `Traefik` documentation [PathPrefixStrip](https://docs.traefik.io/configuration/backends/kubernetes/), the annotation `(traefik.ingress.kubernetes.io/rule-type)` is exactly what we need to direct traefik to strip ingress HOST PATH to ROOT PATH forementioned.
+According to `Traefik` documentation [PathPrefixStrip](https://docs.traefik.io/middlewares/stripprefix/), the annotation `(traefik.ingress.kubernetes.io/rule-type)` is exactly what we need to direct traefik to strip ingress HOST PATH to ROOT PATH forementioned.
 
 To update `Ingress`, we can use below command.
 
