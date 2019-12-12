@@ -1151,7 +1151,7 @@ You can also access the Prometheus UI to see all the metrics available by clicki
 
 ![Prometheus UI](images/prometheus.png)
 
-The KUDO Kafka operator comes by default the JMX Exporter agent enabled.
+The KUDO Kafka operator comes by default with the JMX Exporter agent enabled.
 
 When Kafka operator deployed with parameter `METRICS_ENABLED=true` (which defaults to `true`) then:
 
