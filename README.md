@@ -148,7 +148,7 @@ To configure kubectl to manage your cluster, you simply need to run the followin
 konvoy apply kubeconfig
 ```
 
-You can check that the Kubernetes cluster has been deployed using the version `1.15.2` with 3 control nodes and 5 workers nodes
+You can check that the Kubernetes cluster has been deployed using the version `1.16.3` with 3 control nodes and 4 workers nodes
 
 ```bash
 kubectl get nodes
@@ -156,14 +156,13 @@ kubectl get nodes
 The output should be similar to:
 ```bash
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
-ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.2
-ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
-ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
-ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
-ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.2
-ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.2
-ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
+ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.16.3
+ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.16.3
+ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.16.3
+ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.16.3
+ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.16.3
+ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.16.3
+ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.16.3
 ```
 
 ## 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
@@ -1106,18 +1105,18 @@ kudo-kafka-generator-d655d6dff-5pztl   1/1     Running   0          33m
 
 ## 8. Scale a Konvoy cluster
 
-Edit the `cluster.yaml` file to change the worker count from 5 to 6:
+Edit the `cluster.yaml` file to change the worker count from 4 to 5:
 ```
 ...
   nodePools:
   - name: worker
-    count: 6
+    count: 5
 ...
 ```
 
 And run `konvoy up --yes` again.
 
-Check that there are now 6 kubelets deployed:
+Check that there are now 5 kubelets deployed:
 
 ```
 kubectl get nodes
@@ -1126,15 +1125,14 @@ kubectl get nodes
 The output should be similar to:
 ```bash
 NAME                                         STATUS   ROLES    AGE    VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.15.2
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.15.2
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.2
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.2
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.16.3
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.16.3
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.16.3
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.16.3
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.16.3
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.16.3
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.16.3
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.16.3
 ```
 
 ## 9. Konvoy monitoring
@@ -1289,16 +1287,16 @@ EOF
 
 ## 11. Upgrade a Konvoy cluster
 
-Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.2` to `1.15.3` in the 2 corresponding fields:
+Edit the `cluster.yaml` file to change the Kubernetes version from `1.16.3` to `1.16.4` in the 2 corresponding fields:
 ```
 ...
 spec:
   kubernetes:
-    version: 1.15.3
+    version: 1.16.4
 ...
   - name: worker
   addons:
-    configVersion: stable-1.15.3-0
+    configVersion: stable-1.15.4-2
 ...
 ```
 
@@ -1428,15 +1426,14 @@ kubectl get nodes
 The output should be similar to:
 ```bash
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.3
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.3
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.3
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.3
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.16.4
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.16.4
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.16.4
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.16.4
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.16.4
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.16.4
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.16.4
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.16.4
 ```
 
 Check that the `Jenkins` and the `ebs-dynamic-app` apps are still accessible.
