@@ -1,0 +1,12 @@
+---
+pwxprovisioner:
+  display_name: pwxprovisioner
+  description: pwxprovisioner
+  logo: pwxprovisioner/logo.svg
+  category: other
+  overview: pwxprovisioner/overview.md
+  resources:
+    links:
+      - type: support
+        title: Support Channels
+        link: https://docs.portworx.com/support/

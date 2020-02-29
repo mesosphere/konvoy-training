@@ -1,0 +1,26 @@
+---
+apiVersion: kubeaddons.mesosphere.io/v1beta1
+kind: ClusterAddon
+metadata:
+  name: pwxprovisioner
+  labels:
+    kubeaddons.mesosphere.io/name: pwxprovisioner
+    kubeaddons.mesosphere.io/provides: storageclass
+  annotations:
+    catalog.kubeaddons.mesosphere.io/addon-revision: "1.0.0-1"
+    appversion.kubeaddons.mesosphere.io/pwxprovisioner: "2.3.0"
+    values.chart.helm.kubeaddons.mesosphere.io/pwxprovisioner: "https://central.portworx.com/"
+spec:
+  namespace: kube-system
+  requires:
+    - matchLabels:
+        kubeaddons.mesosphere.io/name: defaultstorageclass-protection
+  kubernetes:
+    minSupportedVersion: v1.15.6
+  cloudProvider:
+    - name: aws
+      enabled: true
+  chartReference:
+    chart: mychart
+    repo: https://github.com/mesosphere/konvoy-training/integrations/portworx
+    version: 0.1.0

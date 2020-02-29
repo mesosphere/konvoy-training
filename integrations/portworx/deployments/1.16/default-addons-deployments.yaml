@@ -1,0 +1,8 @@
+apiVersion: kubeaddons.mesosphere.io/v1beta1
+kind: AddonsDeployment
+metadata:
+  name: default-ksphere-addons-1.16.x
+  labels:
+    kubeaddons.mesosphere.io/name: default-ksphere-addons-1.16.x
+spec:
+  addons: []

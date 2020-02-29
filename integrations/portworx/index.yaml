@@ -1,0 +1,13 @@
+apiVersion: v1
+entries:
+  mychart:
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: 2020-01-29T12:43:03.356136-08:00
+    description: A Helm chart for Kubernetes
+    digest: 4fb27ed7d8f4cdbad14a70093235589de24c889f51514eba3c4a208b5a64a261
+    name: mychart
+    urls:
+    - https://github.com/mesosphere/konvoy-training/integrations/portworx/mychart-0.1.0.tgz
+    version: 0.1.0
+generated: 2020-01-29T12:43:03.353145-08:00
