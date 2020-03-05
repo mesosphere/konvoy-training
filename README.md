@@ -682,9 +682,16 @@ The Kubernetes Universal Declarative Operator (KUDO) is a highly productive tool
 Install the KUDO CLI (on Linux):
 
 ```bash
-wget https://github.com/kudobuilder/kudo/releases/download/v0.9.0/kubectl-kudo_0.9.0_linux_x86_64
-sudo mv kubectl-kudo_0.9.0_linux_x86_64 /usr/local/bin/kubectl-kudo
+rm -f ~/.kudo/repository/repositories.yaml
+wget https://github.com/kudobuilder/kudo/releases/download/v0.10.1/kubectl-kudo_0.10.1_linux_x86_64
+sudo mv kubectl-kudo_0.10.1_linux_x86_64 /usr/local/bin/kubectl-kudo
 chmod +x /usr/local/bin/kubectl-kudo
+```
+
+Uninstall the current version of KUDO deployed on Konvoy:
+
+```bash
+kubectl kudo init --dry-run -o yaml | kubectl delete -f -
 ```
 
 Run the following commands to deploy KUDO on your Kubernetes cluster:
@@ -694,8 +701,8 @@ kubectl kudo init
 ```
 
 The output should be similar to:
-```bash
 
+```bash
 $KUDO_HOME has been configured at /home/centos/.kudo.
 ```
 
@@ -714,14 +721,7 @@ kudo-controller-manager-0   1/1     Running   0          84s
 Deploy ZooKeeper using KUDO:
 
 ```bash
-kubectl kudo install zookeeper --instance=zk
-```
-
-The output should be similar to:
-```bash
-operator.kudo.dev/v1beta1/zookeeper created
-operatorversion.kudo.dev/v1beta1/zookeeper-0.2.0 created
-instance.kudo.dev/v1beta1/zk created
+kubectl kudo install zookeeper --instance=zk --operator-version=0.3.0
 ```
 
 Check the status of the deployment:
@@ -734,18 +734,17 @@ The output should be similar to:
 ```bash
 Plan(s) for "zk" in namespace "default":
 .
-└── zk (Operator-Version: "zookeeper-0.2.0" Active-Plan: "deploy")
+└── zk (Operator-Version: "zookeeper-0.3.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   ├── Phase zookeeper [COMPLETE]
-    │   │   └── Step deploy (COMPLETE)
-    │   └── Phase validation [COMPLETE]
-    │       ├── Step validation (COMPLETE)
-    │       └── Step cleanup (COMPLETE)
+    │   ├── Phase zookeeper (parallel strategy) [COMPLETE]
+    │   │   └── Step deploy [COMPLETE]
+    │   └── Phase validation (serial strategy) [COMPLETE]
+    │       ├── Step validation [COMPLETE]
+    │       └── Step cleanup [COMPLETE]
     └── Plan validation (serial strategy) [NOT ACTIVE]
         └── Phase connection (serial strategy) [NOT ACTIVE]
-            └── Step connection (serial strategy) [NOT ACTIVE]
-                ├── connection [NOT ACTIVE]
-                └── cleanup [NOT ACTIVE]
+            ├── Step connection [NOT ACTIVE]
+            └── Step cleanup [NOT ACTIVE]
 ```
 
 And check that the corresponding Pods are running:
@@ -764,7 +763,7 @@ zk-zookeeper-2                         1/1     Running   0          21m
 Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
 
 ```bash
-kubectl kudo install kafka --instance=kafka -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 --version=0.1.3
+kubectl kudo install kafka --instance=kafka -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 --operator-version=1.2.0
 ```
 
 Check the status of the deployment:
@@ -777,14 +776,16 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-0.1.3" Active-Plan: "deploy")
+└── kafka (Operator-Version: "kafka-1.2.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase deploy-kafka [COMPLETE]
-    │       └── Step deploy (COMPLETE)
+    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │       └── Step deploy [COMPLETE]
+    ├── Plan mirrormaker (serial strategy) [NOT ACTIVE]
+    │   └── Phase deploy-mirror-maker (serial strategy) [NOT ACTIVE]
+    │       └── Step deploy [NOT ACTIVE]
     └── Plan not-allowed (serial strategy) [NOT ACTIVE]
         └── Phase not-allowed (serial strategy) [NOT ACTIVE]
-            └── Step not-allowed (serial strategy) [NOT ACTIVE]
-                └── not-allowed [NOT ACTIVE]
+            └── Step not-allowed [NOT ACTIVE]
 ```
 
 And check that the corresponding Pods are running:
@@ -920,7 +921,7 @@ metadata:
   uid: 6f289e56-86e7-40d2-8360-f8255678a801
 spec:
   operatorVersion:
-    name: kafka-0.1.3
+    name: kafka-1.2.0
   parameters:
     ZOOKEEPER_URI: zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
 status:
@@ -952,10 +953,10 @@ status:
 
 This is also the approach you take to delete a running instance (`kubectl delete instances.kudo.dev kafka`), but you can keep it running.
 
-Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka operator is 1.0.0) using the following command:
+Upgrade your Kafka cluster using the following command:
 
 ```bash
-kubectl kudo upgrade kafka --version=1.0.0 --instance kafka
+kubectl kudo upgrade kafka --version=1.2.1 --instance kafka
 ```
 
 The output should be similar to:
@@ -973,14 +974,16 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-1.0.0" Active-Plan: "deploy")
+└── kafka (Operator-Version: "kafka-1.2.1" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase deploy-kafka [COMPLETE]
-    │       └── Step deploy (COMPLETE)
+    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │       └── Step deploy [COMPLETE]
+    ├── Plan mirrormaker (serial strategy) [NOT ACTIVE]
+    │   └── Phase deploy-mirror-maker (serial strategy) [NOT ACTIVE]
+    │       └── Step deploy [NOT ACTIVE]
     └── Plan not-allowed (serial strategy) [NOT ACTIVE]
         └── Phase not-allowed (serial strategy) [NOT ACTIVE]
-            └── Step not-allowed (serial strategy) [NOT ACTIVE]
-                └── not-allowed [NOT ACTIVE]
+            └── Step not-allowed [NOT ACTIVE]
 ```
 
 And get information about the upgraded KUDO Kafka instance:
@@ -1008,7 +1011,7 @@ metadata:
   uid: 6f289e56-86e7-40d2-8360-f8255678a801
 spec:
   operatorVersion:
-    name: kafka-1.0.0
+    name: kafka-1.2.1
   parameters:
     ZOOKEEPER_URI: zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
 status:
@@ -1076,14 +1079,16 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-1.0.0" Active-Plan: "deploy")
+└── kafka (Operator-Version: "kafka-1.2.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
-    │   └── Phase deploy-kafka [COMPLETE]
-    │       └── Step deploy (COMPLETE)
+    │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+    │       └── Step deploy [COMPLETE]
+    ├── Plan mirrormaker (serial strategy) [NOT ACTIVE]
+    │   └── Phase deploy-mirror-maker (serial strategy) [NOT ACTIVE]
+    │       └── Step deploy [NOT ACTIVE]
     └── Plan not-allowed (serial strategy) [NOT ACTIVE]
         └── Phase not-allowed (serial strategy) [NOT ACTIVE]
-            └── Step not-allowed (serial strategy) [NOT ACTIVE]
-                └── not-allowed [NOT ACTIVE]
+            └── Step not-allowed [NOT ACTIVE]
 ```
 
 And check that the corresponding Pods are running:
