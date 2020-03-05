@@ -1294,10 +1294,6 @@ spec:
   kubernetes:
     version: 1.16.4
 ...
-  - name: worker
-  addons:
-    configVersion: stable-1.15.4-2
-...
 ```
 
 ```bash
