@@ -805,12 +805,15 @@ Produce messages in Kafka:
 
 ```bash
 cat <<EOF | kubectl create -f -
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: kudo-kafka-generator
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: kudo-kafka-generator
   template:
     metadata:
       name: kudo-kafka-generator
@@ -830,12 +833,15 @@ Consume messages from Kafka:
 
 ```bash
 cat <<EOF | kubectl create -f -
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
  name: kudo-kafka-consumer
 spec:
  replicas: 1
+ selector:
+   matchLabels:
+     app: kudo-kafka-consumer
  template:
    metadata:
      name: kudo-kafka-consumer
