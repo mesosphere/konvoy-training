@@ -704,6 +704,9 @@ The output should be similar to:
 
 ```bash
 $KUDO_HOME has been configured at /home/centos/.kudo.
+✅ installed crds
+✅ installed service accounts and other requirements for controller to run
+✅ installed kudo controller
 ```
 
 Check the status of the KUDO controller:
@@ -760,10 +763,10 @@ zk-zookeeper-1                         1/1     Running   0          21m
 zk-zookeeper-2                         1/1     Running   0          21m
 ```
 
-Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
+Deploy Kafka 2.3.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
 
 ```bash
-kubectl kudo install kafka --instance=kafka -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 --operator-version=1.2.0
+kubectl kudo install kafka --instance=kafka -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 --operator-version=1.0.2
 ```
 
 Check the status of the deployment:
@@ -776,7 +779,7 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-1.2.0" Active-Plan: "deploy")
+└── kafka (Operator-Version: "kafka-1.0.2" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
     │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
     │       └── Step deploy [COMPLETE]
@@ -927,7 +930,7 @@ metadata:
   uid: 6f289e56-86e7-40d2-8360-f8255678a801
 spec:
   operatorVersion:
-    name: kafka-1.2.0
+    name: kafka-1.0.2
   parameters:
     ZOOKEEPER_URI: zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
 status:
@@ -962,7 +965,7 @@ This is also the approach you take to delete a running instance (`kubectl delete
 Upgrade your Kafka cluster using the following command:
 
 ```bash
-kubectl kudo upgrade kafka --version=1.2.1 --instance kafka
+kubectl kudo upgrade kafka --operator-version=1.2.0 --instance kafka
 ```
 
 The output should be similar to:
@@ -980,7 +983,7 @@ The output should be similar to:
 ```bash
 Plan(s) for "kafka" in namespace "default":
 .
-└── kafka (Operator-Version: "kafka-1.2.1" Active-Plan: "deploy")
+└── kafka (Operator-Version: "kafka-1.2.0" Active-Plan: "deploy")
     ├── Plan deploy (serial strategy) [COMPLETE]
     │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
     │       └── Step deploy [COMPLETE]
@@ -1017,7 +1020,7 @@ metadata:
   uid: 6f289e56-86e7-40d2-8360-f8255678a801
 spec:
   operatorVersion:
-    name: kafka-1.2.1
+    name: kafka-1.2.0
   parameters:
     ZOOKEEPER_URI: zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181
 status:
