@@ -22,5 +22,5 @@ spec:
       enabled: true
   chartReference:
     chart: mychart
-    repo: https://github.com/mesosphere/konvoy-training/integrations/portworx
+    repo: https://mesosphere.github.io/konvoy-training/integrations/portworx/
     version: 0.1.0
