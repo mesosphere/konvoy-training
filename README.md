@@ -562,7 +562,7 @@ kubectl get pods
 Check the content of the file `/data/out.txt` and note the first timestamp:
 
 ```bash
-pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
+pod=$(kubectl get pods -l app=ebs-dynamic-app -o name)
 kubectl exec -i $pod cat /data/out.txt
 ```
 
@@ -583,7 +583,7 @@ kubectl get pods
 Check the content of the file `/data/out.txt` and verify that the first timestamp is the same as the one noted previously:
 
 ```bash
-pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
+pod=$(kubectl get pods -l app=ebs-dynamic-app -o name)
 kubectl exec -i $pod cat /data/out.txt
 ```
 
@@ -1543,7 +1543,7 @@ Follow the instructions in the page, but use the command below in the second ste
 ```bash
 kubectl config set-cluster kubernetes-cluster \
     --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
-    --server=$(kubectl config view | grep server | awk '{ print $2 }')
+    --server=$(kubectl config view -o jsonpath={.clusters[*].cluster.server})
 ```
 
 Run the following command to check that you can administer the Kubernetes cluster with your Google account:
