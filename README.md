@@ -1070,7 +1070,7 @@ You can also easily update the configuration of your Kafka cluster.
 For example, you can add more brokers using the command below.
 
 ```bash
-kubectl kudo update --instance kafka -p BROKER_COUNT=5
+kubectl kudo update --instance kafka -p BROKER_COUNT=4
 ```
 
 The output should be similar to:
@@ -1112,7 +1112,6 @@ kafka-kafka-0                          1/1     Running   0          70s
 kafka-kafka-1                          1/1     Running   0          102s
 kafka-kafka-2                          1/1     Running   0          2m35s
 kafka-kafka-3                          1/1     Running   0          3m44s
-kafka-kafka-4                          1/1     Running   0          3m15s
 kudo-kafka-consumer-6b4dd5cd59-r7svb   1/1     Running   0          33m
 kudo-kafka-generator-d655d6dff-5pztl   1/1     Running   0          33m
 ```
