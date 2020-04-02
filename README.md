@@ -569,7 +569,7 @@ kubectl exec -i $pod cat /data/out.txt
 Delete the Pod using the following command (it will take some time to complete):
 
 ```bash
-kubectl delete pod $pod
+kubectl delete $pod
 ```
 
 The Deployment will recreate the pod automatically.
