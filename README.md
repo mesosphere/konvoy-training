@@ -312,17 +312,6 @@ Go to the Traefik UI to check that new frontends have been created.
 
 ![Traefik frontends](images/traefik-frontends.png)
 
-Finally, run the following command to see the URL of the Load Balancer created on AWS for the Traefik service:
-
-```bash
-kubectl get svc traefik-kubeaddons -n kubeaddons
-```
-
-The output should be similar to:
-```bash
-NAME                 TYPE           CLUSTER-IP    EXTERNAL-IP                                                             PORT(S)                                     AGE
-traefik-kubeaddons   LoadBalancer   10.0.24.215   abf2e5bda6ca811e982140acb7ee21b7-37522315.us-west-2.elb.amazonaws.com   80:31169/TCP,443:32297/TCP,8080:31923/TCP   4h22m
-```
 
 You can validate that you can access the web application Pods from your laptop using the following commands:
 
