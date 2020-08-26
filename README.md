@@ -32,10 +32,10 @@ Jumpservers have been deployed for each student with all prerequisites installed
 ### Linux/MAC
 For Mac and Linux clients you must change the permission on the file.
 ```
-chmod 400 id_rsa_student#
+chmod 400 id_rsa_student
 ```
 ```
-ssh -i id_rsa_student# centos@jumpserver-ip-address
+ssh -i id_rsa_student centos@jumpserver-ip-address
 ```
 ### Windows
 #### Log in to PuTTY by using your SSH private key
@@ -55,10 +55,10 @@ Once your Google Cloud Shell has started, you will have to copy the contents of 
 
 
 ```
-vi id_rsa_student#
+vi id_rsa_student
 ```
 ```
-chmod 400 id_rsa_student#
+chmod 400 id_rsa_student
 ```
 ```
 ssh -i id_rsa_student centos@jumpserver-ip-address
