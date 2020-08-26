@@ -61,7 +61,7 @@ vi id_rsa_student#
 chmod 400 id_rsa_student#
 ```
 ```
-ssh -i id_rsa_student# centos@jumpserver-ip-address
+ssh -i id_rsa_student centos@jumpserver-ip-address
 ```
 
 ## 1. Deploy a Konvoy cluster
